@@ -16,8 +16,8 @@ export default async function handler(req, res) {
 
   try {
     const client = await clientPromise;
-    const db = client.db('users');
-    const users = db.collection('accounts');
+    const db = client.db('accounts');
+    const users = db.collection('users');
 
     const user = await users.findOne({ email });
     if (!user) {

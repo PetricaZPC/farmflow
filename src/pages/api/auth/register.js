@@ -41,8 +41,8 @@ export default async function handler(req, res) {
 
     try {
         const client = await clientPromise;
-        const db = client.db('users');
-        const users = db.collection('accounts');
+        const db = client.db('accounts');
+        const users = db.collection('users');
 
         const existingUser = await users.findOne({ email: email.toLowerCase() });
         if (existingUser) {
@@ -67,14 +67,8 @@ export default async function handler(req, res) {
         await users.insertOne({ 
             email: email.toLowerCase(), 
             password: hashedPassword,
-            username: finalUsername,
-            sessionId,
-            createdAt: now,
-            updatedAt: now,
-            crops: {},
-            profileImageUrl: null,
-            friends: [],
-            friendRequests: []
+            username: finalUsername
+           
         });
 
         res.setHeader('Set-Cookie', `sessionId=${sessionId}; HttpOnly; Path=/; Max-Age=86400`);
