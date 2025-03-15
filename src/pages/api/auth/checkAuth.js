@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     }
 
     const client = await clientPromise;
-    const db = client.db('test');
+    const db = client.db('accounts');
     const users = db.collection('users');
 
     const user = await users.findOne({ sessionId });
