@@ -13,6 +13,7 @@ function Profile({ userEmail }) {
   const [friendRequests, setFriendRequests] = useState([]);
   const [friends, setFriends] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [cropsCount, setCropsCount] = useState(0);
   const [error, setError] = useState('');
   const [friendEmail, setFriendEmail] = useState('');
   const [sendingRequest, setSendingRequest] = useState(false);
@@ -30,6 +31,7 @@ function Profile({ userEmail }) {
         const data = await response.json();
         setProfileData(data);
         setUsername(data.username || '');
+        setCropsCount(Object.keys(data.crops || {}).length);
         setFriendRequests(data.friendRequests || []);
         setFriends(data.friends || []);
       } catch (error) {
@@ -120,6 +122,7 @@ function Profile({ userEmail }) {
       setError('Failed to update profile. Please try again.');
     }
   };
+  
 
   const handleFriendRequest = async (requestId, accepted) => {
     try {
@@ -404,6 +407,10 @@ function Profile({ userEmail }) {
               </div>
               <div className="flex space-x-3">
                 <div className="text-center">
+                  <div className="text-2xl font-bold">{cropsCount}</div>
+                  <div className="text-green-600">Crops</div>
+                </div>
+                <div className="text-center">
                   <div className="text-2xl font-bold">{friends.length}</div>
                   <div className="text-blue-600">Friends</div>
                 </div>
@@ -569,8 +576,44 @@ function Profile({ userEmail }) {
           <div className="md:col-span-2">
             <div className="bg-white rounded-lg shadow-md p-4 mb-6">
               <h2 className="text-lg font-bold mb-4 flex items-center">
+                <i className="fa fa-leaf text-green-500 mr-2"></i>
                 My Crops
               </h2>
+              
+              {Object.keys(profileData.crops || {}).length === 0 ? (
+                <div className="text-center py-6">
+                  <div className="text-gray-400 text-4xl mb-3">
+                    <i className="fa fa-seedling"></i>
+                  </div>
+                  <p className="text-gray-500">You haven't added any crops yet</p>
+                  <button 
+                    onClick={() => router.push('/map')}
+                    className="mt-4 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700"
+                  >
+                    Add Crops on Map
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {Object.entries(profileData.crops || {}).map(([id, crop]) => (
+                    <div key={id} className="border rounded-lg p-3 hover:shadow-md transition-shadow">
+                      <div className="font-medium text-green-800">
+                        {crop.cropName || 'Unnamed Crop'}
+                      </div>
+                      <div className="text-sm text-gray-500 mt-1">
+                        <i className="fa fa-calendar-o mr-1"></i>
+                        Planted: {crop.plantingDate ? new Date(crop.plantingDate).toLocaleDateString() : 'Not set'}
+                      </div>
+                      <button 
+                        onClick={() => router.push('/map')}
+                        className="mt-3 text-blue-600 text-sm hover:text-blue-800"
+                      >
+                        View on Map <i className="fa fa-arrow-right ml-1"></i>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

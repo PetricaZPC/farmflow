@@ -51,7 +51,7 @@ export default async function handler(req, res) {
 
         if (finalUsername) {
             const existingUsername = await users.findOne({ 
-                username: new RegExp(`^${finalUsername}$`, 'i') 
+                username: new RegExp(`^${finalUsername}$`, 'i')
             });
             
             if (existingUsername) {
@@ -67,8 +67,14 @@ export default async function handler(req, res) {
         await users.insertOne({ 
             email: email.toLowerCase(), 
             password: hashedPassword,
-            username: finalUsername
-           
+            username: finalUsername,
+            sessionId,
+            createdAt: now,
+            updatedAt: now,
+            crops: {},
+            profileImageUrl: null,
+            friends: [],
+            friendRequests: []
         });
 
         res.setHeader('Set-Cookie', `sessionId=${sessionId}; HttpOnly; Path=/; Max-Age=86400`);
