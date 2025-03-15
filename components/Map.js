@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
-// import styles from "../../src/styles/Home.module.css";
 import styles from "../src/styles/Home.module.css";
 import dynamic from "next/dynamic";
 
