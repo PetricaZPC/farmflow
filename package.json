@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^1.1.16",
+    "@fortawesome/fontawesome-free": "^6.7.2",
     "@google/generative-ai": "^0.22.0",
     "ai": "^4.1.45",
     "bcryptjs": "^3.0.2",
