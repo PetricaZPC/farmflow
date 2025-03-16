@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/router';
+// import Footer from '../../components/footer';
+import Footer from './components/footer';
+import ADR from "../../public/ADR.png";
+import MADR from "../../public/MADR.png";
+import APIA from "../../public/APIA.png";
+import Image from 'next/image';
+
 
 export default function Home() {
   const [userEmail, setUserEmail] = useState(null);
@@ -40,48 +47,72 @@ export default function Home() {
   }, []);
 
   return (
-    <div>
-      <div className="w-full lg:h-screen h-full m-auto flex items-center justify-cetner py-20 bg-gray-50 dark:bg-gray-900">
-        <div className="w-full h-full flex flex-col justify-center items-center sm:px-4 px-2">
-          <div className="lg:w-[90%] w-full mx-auto flex flex-col lg:gap-6 lg:flex-row items-center justify-center ">
-            <div className="relative">
-              <img className="absolute z-20 lg:left-[2rem] -top-4 left-[1rem] lg:w-[8rem] lg:h-[8rem] sm:w-[6rem] sm:h-[6rem] w-[3rem] h-[3rem] rounded-full" 
-                   src="https://images.unsplash.com/photo-1499529112087-3cb3b73cec95?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NzEyNjZ8MHwxfHNlYXJjaHwxfHxmYXJtfGVufDB8MHx8fDE3MjA5NDk0NjB8MA&ixlib=rb-4.0.3&q=80&w=1080" 
-                   alt="Side Image" />
-              <img className="absolute z-20 lg:top-[12rem] sm:top-[11rem] top-[5rem] sm:-left-[3rem] -left-[2rem] lg:w-[8rem] lg:h-[8rem] sm:w-[6rem] sm:h-[6rem] w-[3rem] h-[3rem] rounded-full" 
-                   src="https://images.unsplash.com/photo-1500651230702-0e2d8a49d4ad?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NzEyNjZ8MHwxfHNlYXJjaHwxMHx8Y3JvcHN8ZW58MHwwfHx8MTcyMDk0OTQ2MHww&ixlib=rb-4.0.3&q=80&w=1080" 
-                   alt="Side Image 2" />
-              <img className="absolute z-20 lg:top-[23rem] sm:top-[20.5rem] top-[10.5rem] left-[2rem] lg:w-[8rem] lg:h-[8rem] sm:w-[6rem] sm:h-[6rem] w-[3rem] h-[3rem] rounded-full" 
-                   src="https://images.unsplash.com/photo-1492496913980-501348b61469?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NzEyNjZ8MHwxfHNlYXJjaHwxfHxmYXJtZXJ8ZW58MHwwfHx8MTcyMDk0OTQ2MHww&ixlib=rb-4.0.3&q=80&w=1080" 
-                   alt="Side Image 3" />
-              <img className="rounded-full relative object-cover right-0 lg:w-[35rem] lg:h-[35rem] sm:w-[28rem] sm:h-[28rem] w-[14rem] h-[14rem] outline sm:outline-offset-[.77em] outline-offset-[.37em] outline-green-500"
-                   src="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w0NzEyNjZ8MHwxfHNlYXJjaHwxM3x8ZmFybXxlbnwwfDB8fHwxNzIwOTQ5NDYwfDA&ixlib=rb-4.0.3&q=80&w=1080" 
-                   alt="About us" />
+    <section className="bg-white dark:bg-gray-900">
+      <div className="py-8 px-4 mx-auto max-w-screen-xl text-center lg:py-16 lg:px-12">
+        <div className="inline-flex justify-between items-center py-1 px-1 pr-4 mb-7 text-sm text-gray-700 bg-gray-100 rounded-full dark:bg-gray-800 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700">
+          <span className="text-xs bg-primary-600 rounded-full text-white px-4 py-1.5 mr-3">New</span>
+          <span  onClick={() => userEmail ? router.push('/map') : router.push('/signin')} className="text-sm font-medium">FarmFlow is out! See what's new</span>
+          <svg className="ml-2 w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
+          </svg>
+        </div>
+        <h1 className="mb-4 text-4xl font-extrabold tracking-tight leading-none text-gray-900 md:text-5xl lg:text-6xl dark:text-white">
+          Welcome to FarmFlow
+        </h1>
+        <p className="mb-8 text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 dark:text-gray-400">
+          Connect with fellow farmers to share knowledge, best practices, and support for sustainable agriculture.
+        </p>
+        <div className="flex flex-col mb-8 lg:mb-16 space-y-4 sm:flex-row sm:justify-center sm:space-y-0 sm:space-x-4">
+          <button 
+            onClick={() => userEmail ? router.push('/map') : router.push('/signin')} 
+            className="inline-flex justify-center items-center py-3 px-5 text-base font-medium text-center text-white rounded-lg bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 dark:focus:ring-primary-900"
+          >
+            {userEmail ? 'Go to Dashboard' : 'Join Now'}
+            <svg className="ml-2 -mr-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"></path>
+            </svg>
+          </button>   
+        </div>
+        <div className="px-4 mx-auto text-center md:max-w-screen-md lg:max-w-screen-lg lg:px-36">
+          <span className="font-semibold text-gray-400 uppercase">Our Partners</span>
+          <div className="flex flex-wrap justify-center items-center mt-8 text-gray-500 sm:justify-between">
+            <div className="flex items-center">
+              <a href="https://apia.org.ro">
+              <Image 
+                src={APIA} 
+                alt="APIA Logo"
+                className=" mr-5 mb-5 lg:mb-0 grayscale hover:grayscale-0 transition-all duration-300"
+                width={100}
+              />
+              </a>
             </div>
-            <div className="lg:w-[60%] p-4 w-full h-full shadow-xl shadow-green-300/40 flex flex-col justify-center items-center sm:px-6 px-4 rounded-xl">
-              <h2 className="text-4xl text-center text-green-600 dark:text-green-400 font-bold px-4 py-1 md:mt-0 mt-10">
-                About Us
-              </h2>
-              <p className="md:text-3xl text-2xl text-center text-gray-800 dark:text-gray-200 font-bold my-5">Welcome to FarmFlow</p>
-              <p className="md:text-xl sm:text-lg text-base mt-2 text-justify sm:px-2 dark:text-gray-300">
-                At FarmFlow, we're revolutionizing agriculture through technology and community. Our platform empowers farmers to maximize their productivity, sustainability, and profitability through intelligent crop management solutions. We combine advanced mapping tools, intuitive crop tracking, and community knowledge-sharing to create a comprehensive farming ecosystem.
-              </p>
-              <p className="md:text-xl sm:text-lg text-base mt-4 text-justify sm:px-2 dark:text-gray-300">
-                Whether you're managing a small family farm or large agricultural operations, FarmFlow provides the digital tools you need to make informed decisions, monitor crop health, and connect with fellow farmers. Our mission is to bring next-level farming practices to everyone, making sustainable agriculture accessible and profitable for all.
-              </p>
-              <p className="md:text-xl sm:text-lg text-base mt-4 text-justify sm:px-2 dark:text-gray-300">
-                Our innovative platform helps you visualize your farmland, plan crop rotations, track growth cycles, and analyze soil conditions—all in one intuitive interface. Connect with fellow farmers to share knowledge, best practices, and support for sustainable agriculture.
-              </p>
-              <button 
-                onClick={() => userEmail ? router.push('/map') : router.push('/signin')}
-                className="lg:mt-10 mt-6 lg:px-6 px-4 lg:py-4 py-2 bg-green-600 hover:bg-green-700 transition-colors rounded-md lg:text-xl text-lg text-white font-semibold"
-              >
-                {userEmail ? 'Go to Dashboard' : 'Join Now'}
-              </button>
+
+            <div className="flex items-center">
+              <a href="https://www.adr.gov.ro">
+            <Image 
+                src={ADR}  
+                alt="ADR Logo"
+                className=" mr-5 mb-5 lg:mb-0 grayscale hover:grayscale-0 transition-all duration-300"
+                width={150}
+              />
+              </a>
             </div>
+           
+            <div className="flex items-center">
+               <a href="https://madr.ro/organizare/institutii-in-subordine.html">
+            <Image 
+                src={MADR} 
+                alt="MADR Logo"
+                className=" mr-5 mb-5 lg:mb-0 grayscale hover:grayscale-0 transition-all duration-300"
+                width={75}
+              /> 
+              </a>
+            </div>
+           
           </div>
         </div>
       </div>
-    </div>
+      <Footer />
+    </section>
   );
 }
