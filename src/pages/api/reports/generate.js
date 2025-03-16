@@ -1,24 +1,32 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
+  // Allow both GET (for backward compatibility) and POST (new approach)
+  if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { data } = req.query;
-    
-    if (!data) {
-      return res.status(400).json({ error: 'Missing data parameter' });
+    // Get data from query param (GET) or request body (POST)
+    let reportData;
+    if (req.method === 'GET') {
+      const { data } = req.query;
+      if (!data) {
+        return res.status(400).json({ error: 'Missing data parameter' });
+      }
+      reportData = JSON.parse(data);
+    } else {
+      // POST request
+      const { reportData: bodyData } = req.body;
+      if (!bodyData) {
+        return res.status(400).json({ error: 'Missing reportData in request body' });
+      }
+      reportData = typeof bodyData === 'string' ? JSON.parse(bodyData) : bodyData;
     }
-    
-    const reportData = JSON.parse(data);
-    
-    
+
     const pdfDoc = await PDFDocument.create();
     const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    
     
     const page = pdfDoc.addPage([612, 792]); 
     const { width, height } = page.getSize();
@@ -28,10 +36,10 @@ export default async function handler(req, res) {
     const margin = 50;
     const maxWidth = width - (margin * 2);
     
+    // Start higher on the page for more space
+    let y = height - 70;
     
-    let y = height - 50;
-    
-    
+    // Title
     page.drawText('FarmFlow Field Report', {
       x: margin,
       y,
@@ -40,9 +48,10 @@ export default async function handler(req, res) {
       color: rgb(0.1, 0.4, 0.1),
     });
     
-    y -= 40;
+    // Increase spacing to prevent overlap
+    y -= 50; // Changed from 40 to 50
     
-    
+    // Field name
     page.drawText(`Field: ${reportData.fieldName || "Unnamed Field"}`, {
       x: margin,
       y,
@@ -50,9 +59,10 @@ export default async function handler(req, res) {
       font: boldFont,
     });
     
-    y -= 25;
+    // Increase spacing after headings
+    y -= 30; // Changed from 25 to 30
     
-    
+    // Area
     page.drawText(`Area: ${reportData.area || 0} hectares`, {
       x: margin,
       y,
@@ -60,9 +70,9 @@ export default async function handler(req, res) {
       font: helveticaFont,
     });
     
-    y -= 20;
+    y -= 25; // Adequate spacing for normal text
     
-    
+    // Planting date
     page.drawText(`Planting Date: ${reportData.plantingDate || "Not specified"}`, {
       x: margin,
       y,
@@ -70,8 +80,8 @@ export default async function handler(req, res) {
       font: helveticaFont,
     });
     
-    y -= 40;
-    
+    // More spacing before next heading
+    y -= 45; // Changed from 40 to 45
     
     page.drawText('Recommendations:', {
       x: margin,
@@ -81,7 +91,6 @@ export default async function handler(req, res) {
     });
     
     y -= 25;
-    
     
     const recommendations = reportData.recommendations || "No recommendations available";
     let plainRecommendations;
@@ -100,7 +109,6 @@ export default async function handler(req, res) {
       plainRecommendations = "No recommendations available";
     }
     
-  
     const wrapText = (text, maxWidth, font, fontSize) => {
       const paragraphs = text.split('\n');
       const lines = [];
@@ -134,25 +142,22 @@ export default async function handler(req, res) {
       return lines;
     };
     
-    
     const drawWrappedText = (textLines, startY) => {
       let currentY = startY;
       let currentPage = page;
       
       for (const line of textLines) {
+        // Check if we need a new page before drawing each line
+        if (currentY < margin + 30) { // Add more buffer space (30 points)
+          currentPage = pdfDoc.addPage([612, 792]);
+          currentY = currentPage.getSize().height - margin;
+        }
       
         if (line === '') {
           currentY -= fontSize;
           continue;
         }
         
-        
-        if (currentY < margin) {
-          currentPage = pdfDoc.addPage([612, 792]);
-          currentY = currentPage.getSize().height - margin;
-        }
-        
-      
         let xPosition = margin;
         let lineText = line;
         
@@ -162,7 +167,6 @@ export default async function handler(req, res) {
         } else if (/^\d+\.\s/.test(line)) {
           xPosition = margin + 15;  
         }
-        
         
         currentPage.drawText(lineText, {
           x: xPosition,
@@ -177,14 +181,14 @@ export default async function handler(req, res) {
       return currentY;
     };
     
-    
     const textLines = wrapText(plainRecommendations, maxWidth - 20, helveticaFont, fontSize);
     y = drawWrappedText(textLines, y);
-    
+
+    // Add additional space after recommendations
+    y -= 20; // Add extra buffer space
     
     if (reportData.weatherData && Object.keys(reportData.weatherData).length > 0) {
       y -= 30;
-      
       
       if (y < 100) {
         page = pdfDoc.addPage([612, 792]);
@@ -199,7 +203,6 @@ export default async function handler(req, res) {
       });
       
       y -= 25;
-      
       
       Object.entries(reportData.weatherData).forEach(([key, value]) => {
         if (y < margin) {
@@ -219,12 +222,11 @@ export default async function handler(req, res) {
       });
     }
     
-    
     if (reportData.coordinates && reportData.coordinates.length > 0) {
       y -= 30;
       
-      
-      if (y < 100) {
+      // Change from 100 to a larger value to create new page sooner
+      if (y < 150) { // Instead of 100, use 150
         page = pdfDoc.addPage([612, 792]);
         y = page.getSize().height - margin;
       }
@@ -237,7 +239,6 @@ export default async function handler(req, res) {
       });
       
       y -= 25;
-      
       
       const maxCoords = 5;
       for (let i = 0; i < Math.min(maxCoords, reportData.coordinates[0].length); i++) {
@@ -272,7 +273,6 @@ export default async function handler(req, res) {
       }
     }
     
-  
     const pages = pdfDoc.getPages();
     const currentDate = new Date().toLocaleDateString();
     const footerText = `Generated on: ${currentDate}`;
@@ -296,17 +296,30 @@ export default async function handler(req, res) {
       });
     }
     
-    
     const pdfBytes = await pdfDoc.save();
     
-    
+    // Set proper headers for PDF download
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=${reportData.fieldName.replace(/\s+/g, '_')}_report.pdf`);
+    res.setHeader('Content-Disposition', `inline; filename=${reportData.fieldName.replace(/\s+/g, '_')}_report.pdf`);
     res.send(Buffer.from(pdfBytes));
     
   } catch (error) {
     console.error('Error generating report:', error);
     console.error('Error details:', error.message, error.stack);
-    res.status(500).json({ error: 'Failed to generate report' });
+    
+    // Return an HTML error page instead of JSON for better user experience
+    res.status(500);
+    res.setHeader('Content-Type', 'text/html');
+    res.send(`
+      <html>
+        <head><title>Report Generation Error</title></head>
+        <body>
+          <h1>Error Generating Report</h1>
+          <p>Sorry, we encountered an error while generating your field report.</p>
+          <p>Error details: ${error.message}</p>
+          <button onclick="window.close()">Close</button>
+        </body>
+      </html>
+    `);
   }
 }

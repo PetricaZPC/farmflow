@@ -21,22 +21,44 @@ export default async function handler(req, res) {
             return res.status(401).json({ error: 'Not authenticated' });
         }
 
+        console.log('User friends data:', JSON.stringify(user.friends || []));
+        
+        // Return the friends directly if they're stored as objects
+        if (user.friends && user.friends.length > 0 && typeof user.friends[0] === 'object') {
+            return res.status(200).json({ friends: user.friends });
+        }
+        
+        // Legacy support for ID-based friends
         const friends = [];
         if (user.friends && user.friends.length > 0) {
-            const friendIds = user.friends.map(id => {
-                try {
-                    return new ObjectId(id);
-                } catch (error) {
-                    return null;
+            const friendIds = user.friends.map(friend => {
+                // Handle both object format and string ID format
+                if (typeof friend === 'object' && friend._id) {
+                    try {
+                        return new ObjectId(friend._id);
+                    } catch (error) {
+                        console.error('Invalid friend ID:', friend._id);
+                        return null;
+                    }
+                } else if (typeof friend === 'string') {
+                    try {
+                        return new ObjectId(friend);
+                    } catch (error) {
+                        console.error('Invalid friend ID:', friend);
+                        return null;
+                    }
                 }
+                return null;
             }).filter(id => id !== null);
 
-            const friendDocs = await users
-                .find({ _id: { $in: friendIds } })
-                .project({ _id: 1, email: 1, username: 1, profileImageUrl: 1 })
-                .toArray();
-                
-            friends.push(...friendDocs);
+            if (friendIds.length > 0) {
+                const friendDocs = await users
+                    .find({ _id: { $in: friendIds } })
+                    .project({ _id: 1, email: 1, username: 1, profileImageUrl: 1 })
+                    .toArray();
+                    
+                friends.push(...friendDocs);
+            }
         }
 
         res.status(200).json({ friends });

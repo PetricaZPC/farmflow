@@ -35,8 +35,8 @@ function LeafletMap({ userEmail, userCrops }) {
     const [fieldTasks, setFieldTasks] = useState({});
     
     useEffect(() => {
-        if (userCrops) {
-            console.log("Loaded userCrops:", userCrops);
+        if (userCrops && Object.keys(userCrops).length > 0) {
+            console.log("Loading userCrops:", userCrops);
             setPopups(userCrops);
             
             const newFeatureGroup = new L.FeatureGroup();
@@ -77,20 +77,29 @@ function LeafletMap({ userEmail, userCrops }) {
 
     useEffect(() => {
         return () => {
-            console.log('Auto-saving crops on component unmount');
-            saveCropsToServer(popups);  // This will use the cleaned data internally
+            if (popups && Object.keys(popups).length > 0) {
+                console.log('Auto-saving crops on component unmount');
+                saveCropsToServer(popups);
+            } else {
+                console.log('No crops to save on unmount');
+            }
         };
     }, [popups]);
     
-    // Add this inside your LeafletMap component
     useEffect(() => {
-      // Auto-save every minute if there are changes
-      const autoSaveInterval = setInterval(() => {
-        console.log('Auto-saving crops (periodic)');
-        saveCropsToServer(popups);
-      }, 60000); // 60 seconds
+        // Only start auto-save interval when we have data
+        if (!popups || Object.keys(popups).length === 0) {
+            console.log('No crops to auto-save yet');
+            return;
+        }
       
-      return () => clearInterval(autoSaveInterval);
+        console.log('Starting auto-save interval');
+        const autoSaveInterval = setInterval(() => {
+            console.log('Auto-saving crops (periodic)');
+            saveCropsToServer(popups);
+        }, 60000); // 60 seconds
+      
+        return () => clearInterval(autoSaveInterval);
     }, [popups]);
     
     const handleClosePopup = (id) => {
@@ -306,6 +315,12 @@ function LeafletMap({ userEmail, userCrops }) {
     // Then modify your saveCropsToServer function to use this
     const saveCropsToServer = async (cropsData) => {
         try {
+            // Don't save if no crop data exists or if we're still loading
+            if (!cropsData || Object.keys(cropsData).length === 0) {
+                console.log("No crops to save");
+                return false;
+            }
+            
             const cleanData = prepareDataForSaving(cropsData);
             console.log("Saving crops to server:", cleanData);
             
