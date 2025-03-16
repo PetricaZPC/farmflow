@@ -39,10 +39,3 @@ export default async function handler(req, res) {
         res.status(500).json({ error: 'An error occurred while saving crops' });
     }
 }
-
-// In the saveCropsToServer function
-if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Error response:', errorText);
-    throw new Error(`HTTP error! status: ${response.status}`);
-}
