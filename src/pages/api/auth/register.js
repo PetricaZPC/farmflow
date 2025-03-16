@@ -41,7 +41,7 @@ export default async function handler(req, res) {
 
     try {
         const client = await clientPromise;
-        const db = client.db('accounts');
+        const db = client.db('accounts'); 
         const users = db.collection('users');
 
         const existingUser = await users.findOne({ email: email.toLowerCase() });
@@ -80,6 +80,14 @@ export default async function handler(req, res) {
         res.setHeader('Set-Cookie', `sessionId=${sessionId}; HttpOnly; Path=/; Max-Age=86400`);
 
         res.status(201).json({ message: 'User registered successfully' });
+
+        // In saveCrops.js
+        console.log('User found:', user.email);
+        console.log('Saving crops:', Object.keys(crops).length);
+
+        // Then after the update
+        const updatedUser = await users.findOne({ sessionId: sessionId });
+        console.log('After update, crops:', Object.keys(updatedUser.crops).length);
     } catch (error) {
         console.error('Error during registration:', error);
         res.status(500).json({ error: 'An error occurred while registering' });

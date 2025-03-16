@@ -1,8 +1,13 @@
-import { GoogleGenerativeAI } from "@google-generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 function formatResponse(text) {
+  
   let formattedText = text.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b><br/>');
+
+  
   formattedText = formattedText.replace(/\n\* /g, '<br/>• ');
+
+ 
   formattedText = formattedText.replace(/^(\* )/gm, '• ');
 
   return formattedText.trim();

@@ -1,4 +1,4 @@
-import clientPromise from '../auth/mongodb';
+import clientPromise from './mongodb'; 
 import { getCookie } from 'cookies-next';
 
 export default async function handler(req, res) {
@@ -15,21 +15,34 @@ export default async function handler(req, res) {
         }
 
         const client = await clientPromise;
-        const db = client.db('accounts');
-        const users = db.collection('users');
+        const db = client.db('accounts'); 
+        const users = db.collection('users'); 
 
         const user = await users.findOne({ sessionId: sessionId });
         if (!user) {
-            return res.status(401).json({ message: "Not authenticated" });
+            console.error('User not found with sessionId:', sessionId);
+            return res.status(404).json({ message: "User not found" });
         }
+
+        console.log('User found:', user.email);
+        console.log('Saving crops:', Object.keys(crops).length);
 
         await users.updateOne({ sessionId: sessionId }, { $set: { crops: crops } });
 
-        console.log('Crops saved successfully');
+        // Verify the update worked
+        const updatedUser = await users.findOne({ sessionId: sessionId });
+        console.log('After update, crops:', Object.keys(updatedUser.crops).length);
         
         res.status(200).json({ success: true });
     } catch (error) {
         console.error('Error saving crops:', error);
         res.status(500).json({ error: 'An error occurred while saving crops' });
     }
+}
+
+// In the saveCropsToServer function
+if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Error response:', errorText);
+    throw new Error(`HTTP error! status: ${response.status}`);
 }
