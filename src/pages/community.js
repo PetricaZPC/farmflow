@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Navbar from './components/navbar';
 import withAuth from './api/auth/withAuth';
-import io from 'socket.io-client';
+import io from 'socket.io-client'; // Import socket.io
 import 'leaflet/dist/leaflet.css';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
@@ -26,15 +26,16 @@ const LeafletCSS = dynamic(() => import('leaflet/dist/leaflet.css'), { ssr: fals
 
 function Community({ userEmail }) {
     const router = useRouter();
+    // State for messages and input
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
     const [friends, setFriends] = useState([]);
     const [selectedImage, setSelectedImage] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
-    const messagesEndRef = useRef(null);
-    const chatContainerRef = useRef(null); 
-    const fileInputRef = useRef(null); 
+    const messagesEndRef = useRef(null); // Reference for auto-scrolling
+    const chatContainerRef = useRef(null); // Reference for the chat container
+    const fileInputRef = useRef(null); // Reference for file input
     const [socket, setSocket] = useState(null);
     const [messageReactions, setMessageReactions] = useState({});
     const [replyingTo, setReplyingTo] = useState(null);
@@ -45,6 +46,7 @@ function Community({ userEmail }) {
     const [showScrollButton, setShowScrollButton] = useState(false);
     const [newMessageAlert, setNewMessageAlert] = useState(false);
 
+    // Function to fetch messages from the database
     const fetchMessages = async (showLoading = true) => {
         if (showLoading) {
             setLoading(true);
@@ -66,6 +68,7 @@ function Community({ userEmail }) {
             
             if (data && Array.isArray(data.messages)) {
                 setMessages(data.messages);
+                // Initialize liked messages state based on server data
                 const likedMessageIds = new Set();
                 data.messages.forEach(message => {
                     if (message.reactedUsers && 
@@ -89,6 +92,7 @@ function Community({ userEmail }) {
         }
     };
 
+    // Function to fetch friends list
     const fetchFriends = async () => {
         try {
             const response = await fetch('/api/profile/getFriends', {
@@ -109,17 +113,19 @@ function Community({ userEmail }) {
         }
     };
 
+    // Handle image selection
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
         
-        if (file.size > 5 * 1024 * 1024) {
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
             alert('Image size should be less than 5MB');
             return;
         }
         
         setSelectedImage(file);
         
+        // Create preview URL
         const reader = new FileReader();
         reader.onload = () => {
             setImagePreview(reader.result);
@@ -127,12 +133,15 @@ function Community({ userEmail }) {
         reader.readAsDataURL(file);
     };
 
+    // Function to post a new message
     const postMessage = async (e) => {
         e.preventDefault();
         
+        // Don't submit if there's no message text and no image
         if (!newMessage.trim() && !selectedImage) return;
 
         try {
+            // Create FormData to handle files
             const formData = new FormData();
             formData.append('content', newMessage);
             formData.append('userEmail', userEmail);
@@ -141,13 +150,14 @@ function Community({ userEmail }) {
                 formData.append('image', selectedImage);
             }
 
+            // Add location data if present
             if (mapLocation) {
                 formData.append('locationData', JSON.stringify(mapLocation));
             }
 
             const response = await fetch('/api/messages/postMessage', {
                 method: 'POST',
-                body: formData, 
+                body: formData, // Send as FormData instead of JSON
             });
 
             if (!response.ok) {
@@ -155,14 +165,17 @@ function Community({ userEmail }) {
             }
 
             const data = await response.json();
+            // Emit the new message to the server via WebSocket
             socket.emit('postMessage', data.message);
 
+            // Add new message to the state and clear input
             setNewMessage('');
             setSelectedImage(null);
             setImagePreview(null);
             setMapLocation(null);
             setShowMapPreview(false);
             
+            // Fetch messages again to ensure we have the latest data
             fetchMessages(false);
         } catch (error) {
             console.error('Error posting message:', error);
@@ -170,6 +183,7 @@ function Community({ userEmail }) {
         }
     };
     
+    // Scroll to bottom of chat container
     const scrollToBottom = (behavior = 'smooth') => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
@@ -177,51 +191,64 @@ function Community({ userEmail }) {
         }
     };
     
+    // Add this function to check scroll position
     const handleScroll = () => {
         if (chatContainerRef.current) {
             const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+            // Show button when scrolled up at least 100px from bottom
             const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
             setShowScrollButton(!isNearBottom);
             
+            // If we're at the bottom, clear the new message alert
             if (isNearBottom) {
                 setNewMessageAlert(false);
             }
         }
     };
 
+    // Scroll to bottom when messages change
     useEffect(() => {
+        // Check if we're already scrolled to bottom
         if (chatContainerRef.current) {
             const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
             const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
             
+            // Only auto-scroll if user is already at the bottom
             if (isAtBottom) {
                 scrollToBottom();
             } else {
+                // Show a new message alert instead
                 setNewMessageAlert(true);
             }
         }
     }, [messages]);
         
+    // Initial fetch of messages and friends
     useEffect(() => {
-        fetchFriends(); 
+        fetchFriends(); // Get friends list first
         fetchMessages();
         
+        // Set up polling for new messages every 3 seconds
         const intervalId = setInterval(() => {
-            fetchMessages(false); 
+            fetchMessages(false); // Don't show loading indicator during polling
         }, 3000);
         
+        // Clean up interval on unmount
         return () => clearInterval(intervalId);
     }, []);
 
     useEffect(() => {
+        // Initialize WebSocket connection
         const newSocket = io({
             path: '/api/socketio',
         });
         setSocket(newSocket);
 
+        // Listen for new messages
         newSocket.on('newMessage', (message) => {
             setMessages(prevMessages => [...prevMessages, message]);
             
+            // If user is not at the bottom, show the new message alert
             if (chatContainerRef.current) {
                 const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
                 if (scrollHeight - scrollTop - clientHeight > 100) {
@@ -230,17 +257,20 @@ function Community({ userEmail }) {
             }
         });
 
+        // Clean up on unmount
         return () => {
             newSocket.off('newMessage');
             newSocket.disconnect();
         };
     }, []);
 
+    // Add a new useEffect to setup scroll event listener
     useEffect(() => {
         const chatContainer = chatContainerRef.current;
         if (chatContainer) {
             chatContainer.addEventListener('scroll', handleScroll);
             
+            // Initial check for button visibility
             handleScroll();
         }
         
@@ -276,11 +306,13 @@ function Community({ userEmail }) {
         }
     };
 
+    // Update your handleReaction function with this improved version:
     const handleReaction = async (messageId, reaction) => {
         try {
+            // Check if the user has already liked this message
             const isLiked = userLikedMessages.has(messageId);
             
-            
+            // Optimistically update UI
             setUserLikedMessages(prevLiked => {
                 const newLiked = new Set([...prevLiked]);
                 if (isLiked) {
@@ -291,6 +323,7 @@ function Community({ userEmail }) {
                 return newLiked;
             });
             
+            // Also optimistically update the reaction count
             setMessageReactions(prevReactions => {
                 const currentLikes = (prevReactions[messageId]?.like || 0);
                 const updatedLikes = isLiked ? Math.max(0, currentLikes - 1) : currentLikes + 1;
@@ -314,8 +347,8 @@ function Community({ userEmail }) {
                 body: JSON.stringify({ 
                     messageId, 
                     reaction,
-                    action: isLiked ? 'unlike' : 'like', 
-                    userEmail 
+                    action: isLiked ? 'unlike' : 'like', // Tell the API whether to add or remove
+                    userEmail // Pass the user email for tracking
                 }),
             });
 
@@ -328,6 +361,7 @@ function Community({ userEmail }) {
             const data = await response.json();
             console.log("API response:", data);
             
+            // Update with the accurate count from the server
             setMessageReactions(prevReactions => ({
                 ...prevReactions,
                 [messageId]: data.reactions,
@@ -336,6 +370,7 @@ function Community({ userEmail }) {
             console.error('Error toggling reaction:', error);
             alert(`Failed to update reaction: ${error.message}`);
             
+            // Revert both the like state and the count if there was an error
             setUserLikedMessages(prevLiked => {
                 const newLiked = new Set([...prevLiked]);
                 if (newLiked.has(messageId)) {
@@ -346,7 +381,7 @@ function Community({ userEmail }) {
                 return newLiked;
             });
             
-            
+            // Don't fetch messages again - just revert the optimistic UI changes
             setMessageReactions(prevReactions => {
                 const currentLikes = (prevReactions[messageId]?.like || 0);
                 const updatedLikes = !isLiked ? Math.max(0, currentLikes - 1) : currentLikes + 1;
@@ -381,7 +416,7 @@ function Community({ userEmail }) {
                 ...prevReplies,
                 [messageId]: [...(prevReplies[messageId] || []), data.reply],
             }));
-            setReplyingTo(null); 
+            setReplyingTo(null); // Clear the replyingTo state
         } catch (error) {
             console.error('Error posting reply:', error);
             alert('Failed to post reply. Please try again.');
@@ -432,6 +467,7 @@ function Community({ userEmail }) {
                         </div>
                     )}
                     
+                    {/* Chat messages container with fixed height and overflow */}
                     <div 
                         ref={chatContainerRef}
                         className="flex-grow overflow-y-auto relative"
@@ -477,6 +513,7 @@ function Community({ userEmail }) {
                                                 </div>
                                             </div>
                                             <div className="mt-2 ml-14">
+                                                {/* Display image if present */}
                                                 {message.imageUrl && (
                                                     <div className="mb-3">
                                                         <img 
@@ -488,7 +525,7 @@ function Community({ userEmail }) {
                                                 )}
                                                 <p className="text-gray-800" dangerouslySetInnerHTML={{ __html: linkify(message.content) }} />
                                                 
-                                                
+                                                {/* Display message location if present */}
                                                 {message.location && (
                                                     <div className="mt-2">
                                                         <MapContainer center={[message.location.latitude, message.location.longitude]} zoom={13} style={{ height: '200px', width: '100%' }}>
@@ -527,7 +564,7 @@ function Community({ userEmail }) {
                                                     </svg>
                                                     <span>Reply</span>
                                                 </button>
-                                                
+                                                {/* Display reactions - only show when count is greater than 0 */}
                                                 {messageReactions[message._id] && messageReactions[message._id].like > 0 && (
                                                     <div className="flex items-center">
                                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1 text-blue-500" fill="currentColor" viewBox="0 0 24 24" stroke="none">
@@ -537,6 +574,7 @@ function Community({ userEmail }) {
                                                     </div>
                                                 )}
                                             </div>
+                                            {/* Reply input */}
                                             {replyingTo === message._id && (
                                                 <div className="mt-2 ml-14">
                                                     <input
@@ -546,12 +584,13 @@ function Community({ userEmail }) {
                                                         onKeyDown={(e) => {
                                                             if (e.key === 'Enter') {
                                                                 postReply(message._id, e.target.value);
-                                                                e.target.value = ''; 
+                                                                e.target.value = ''; // Clear the input
                                                             }
                                                         }}
                                                     />
                                                 </div>
                                             )}
+                                            {/* Display replies */}
                                             {replies[message._id] && (
                                                 <div className="ml-14 mt-2">
                                                     {replies[message._id].map((reply, i) => (
@@ -570,6 +609,7 @@ function Community({ userEmail }) {
                             </div>
                         )}
                         
+                        {/* Scroll to bottom button - beautiful fixed arrow */}
                         {(showScrollButton || newMessageAlert) && (
                             <button
                                 onClick={() => scrollToBottom()}
@@ -588,6 +628,7 @@ function Community({ userEmail }) {
                         )}
                     </div>
                     
+                    {/* Message Input - fixed at bottom */}
                     <div className="py-4 px-4 bg-white border-t">
                         <form onSubmit={postMessage} className="space-y-3">
                             {imagePreview && (
@@ -610,6 +651,7 @@ function Community({ userEmail }) {
                                 </div>
                             )}
                             
+                            {/* Map preview - displayed before sending */}
                             {showMapPreview && mapLocation && (
                                 <div className="mb-3 relative">
                                     <div className="flex justify-between items-center mb-1">
@@ -637,6 +679,7 @@ function Community({ userEmail }) {
                             
                             <div className="flex">
                                 <div className="flex-1 flex">
+                                    {/* Image Upload Button with SVG */}
                                     <button 
                                         type="button"
                                         onClick={() => fileInputRef.current?.click()}
@@ -655,6 +698,7 @@ function Community({ userEmail }) {
                                         />
                                     </button>
                                     
+                                    {/* Location Button with SVG */}
                                     <button
                                         type="button"
                                         onClick={attachMapLocation}
@@ -675,6 +719,7 @@ function Community({ userEmail }) {
                                     />
                                 </div>
                                 
+                                {/* Send Button with SVG */}
                                 <button 
                                     type="submit"
                                     className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-r-lg flex items-center justify-center"

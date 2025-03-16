@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Image from 'next/image';
 import Navbar from './components/navbar';
 import withAuth from './api/auth/withAuth';
+import Footer from './components/footer';
 
 function Profile({ userEmail }) {
   const router = useRouter();
@@ -318,11 +319,12 @@ function Profile({ userEmail }) {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Navbar userEmail={userEmail} />
       
-      <div className="flex-grow container mx-auto px-4 py-8">
+      <div className="flex-grow w-full px-4 py-4 md:py-8 md:container md:mx-auto">
+        {/* Profile Header Card */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="h-40 md:h-64 bg-gradient-to-r from-green-400 to-blue-500 relative">
-            <div className="absolute -bottom-16 left-6 md:left-10">
-              <div className="relative h-32 w-32 rounded-full border-4 border-white overflow-hidden bg-gray-200">
+          <div className="h-32 md:h-64 bg-gradient-to-r from-green-400 to-blue-500 relative">
+            <div className="absolute -bottom-16 left-4 md:left-10">
+              <div className="relative h-24 w-24 md:h-32 md:w-32 rounded-full border-4 border-white overflow-hidden bg-gray-200">
                 {profileData.profileImageUrl ? (
                   <img
                     src={profileData.profileImageUrl}
@@ -352,75 +354,76 @@ function Profile({ userEmail }) {
             </div>
           </div>
           
-          <div className="pt-20 px-6 pb-6">
-            <div className="flex justify-between items-center">
-              <div>
+          <div className="pt-20 px-4 md:px-6 pb-6">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+              <div className="space-y-2">
                 {editMode ? (
-                  <form onSubmit={handleUpdateProfile} className="flex items-center">
+                  <form onSubmit={handleUpdateProfile} className="flex flex-col md:flex-row items-start md:items-center gap-2">
                     <input
                       type="text"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      className="text-2xl font-bold border-b border-green-500 pb-1 focus:outline-none"
+                      className="text-xl md:text-2xl font-bold border-b border-green-500 pb-1 focus:outline-none w-full md:w-auto"
                       placeholder="Your username"
                       maxLength={30}
                     />
-                    <button 
-                      type="submit" 
-                      className="ml-4 bg-green-600 text-white py-1 px-3 rounded-lg text-sm hover:bg-green-700"
-                    >
-                      Save
-                    </button>
-                    <button 
-                      type="button" 
-                      className="ml-2 bg-gray-300 text-gray-700 py-1 px-3 rounded-lg text-sm hover:bg-gray-400"
-                      onClick={() => {
-                        setEditMode(false);
-                        setUsername(profileData.username || '');
-                      }}
-                    >
-                      Cancel
-                    </button>
+                    <div className="flex gap-2 w-full md:w-auto">
+                      <button 
+                        type="submit" 
+                        className="flex-1 md:flex-none bg-green-600 text-white py-2 px-4 rounded-lg text-sm hover:bg-green-700"
+                      >
+                        Save
+                      </button>
+                      <button 
+                        type="button" 
+                        className="flex-1 md:flex-none bg-gray-300 text-gray-700 py-2 px-4 rounded-lg text-sm hover:bg-gray-400"
+                        onClick={() => {
+                          setEditMode(false);
+                          setUsername(profileData.username || '');
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </form>
                 ) : (
-                  <div className="flex items-center">
-                    <h1 className="text-2xl font-bold">
+                  <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
+                    <h1 className="text-xl md:text-2xl font-bold">
                       {profileData.username || 'Unnamed Farmer'}
                     </h1>
                     <button 
                       onClick={() => setEditMode(true)}
-                      className="ml-3 bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded-lg text-sm"
+                      className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded-lg text-sm"
                     >
                       <i className="fa fa-pencil mr-1"></i> Edit
                     </button>
                   </div>
                 )}
-                <p className="text-gray-600 mt-1">{userEmail}</p>
-                <p className="text-gray-500 text-sm mt-2">
+                <p className="text-gray-600">{userEmail}</p>
+                <p className="text-gray-500 text-sm">
                   <i className="fa fa-calendar mr-2"></i>
-                  Joined {new Date(profileData.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+                  Joined {new Date(profileData.createdAt).toLocaleDateString()}
                 </p>
               </div>
-              <div className="flex space-x-3">
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{cropsCount}</div>
-                  <div className="text-green-600">Crops</div>
+              
+              <div className="flex gap-6 mt-4 md:mt-0">
+                <div className="text-center flex-1 md:flex-none">
+                  <div className="text-xl md:text-2xl font-bold">{cropsCount}</div>
+                  <div className="text-green-600 text-sm">Crops</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{friends.length}</div>
-                  <div className="text-blue-600">Friends</div>
+                <div className="text-center flex-1 md:flex-none">
+                  <div className="text-xl md:text-2xl font-bold">{friends.length}</div>
+                  <div className="text-blue-600 text-sm">Friends</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
         
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-1">
+        {/* Content Grid */}
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+          {/* Friends Section */}
+          <div className="lg:col-span-1 order-2 lg:order-1">
             <div className="bg-white rounded-lg shadow-md p-4">
               <h2 className="text-lg font-bold mb-4 flex items-center">
                 <i className="fa fa-users text-green-500 mr-2"></i>
@@ -508,7 +511,7 @@ function Profile({ userEmail }) {
                             <div className="text-xs text-gray-500">{request.fromEmail}</div>
                           </div>
                         </div>
-                        <div className="flex space-x-2">
+                        <div className=" flex space-x-2">
                           <button 
                             onClick={() => handleFriendRequest(
                               request._id ? request._id.toString() : request.id,
@@ -516,7 +519,7 @@ function Profile({ userEmail }) {
                             )}
                             className="bg-green-500 text-white py-1 px-3 rounded-lg text-sm hover:bg-green-600"
                           >
-                            Accept
+                            ✔
                           </button>
                           <button 
                             onClick={() => handleFriendRequest(
@@ -525,7 +528,7 @@ function Profile({ userEmail }) {
                             )}
                             className="bg-gray-300 text-gray-700 py-1 px-3 rounded-lg text-sm hover:bg-gray-400"
                           >
-                            Decline
+                            ✖
                           </button>
                         </div>
                       </div>
@@ -573,8 +576,9 @@ function Profile({ userEmail }) {
             </div>
           </div>
           
-          <div className="md:col-span-2">
-            <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+          {/* Crops Section */}
+          <div className="lg:col-span-2 order-1 lg:order-2">
+            <div className="bg-white rounded-lg shadow-md p-4">
               <h2 className="text-lg font-bold mb-4 flex items-center">
                 <i className="fa fa-leaf text-green-500 mr-2"></i>
                 My Crops
@@ -594,7 +598,7 @@ function Profile({ userEmail }) {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {Object.entries(profileData.crops || {}).map(([id, crop]) => (
                     <div key={id} className="border rounded-lg p-3 hover:shadow-md transition-shadow">
                       <div className="font-medium text-green-800">
@@ -618,6 +622,9 @@ function Profile({ userEmail }) {
           </div>
         </div>
       </div>
+
+      {/* Footer - moved outside the main content area */}
+      <Footer />
     </div>
   );
 }
