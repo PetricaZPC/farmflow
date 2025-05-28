@@ -3,38 +3,101 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-@layer components {
-  /* .btn-primary {
-      @apply py-1.5 px-3 text-center bg-blue-700 rounded-md text-white;
-  } */
-}
-/* @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-} */
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #ffffff;
-  --foreground: #171717;
-  }
+  --primary: #2E7D32;
+  --primary-light: #4CAF50;
+  --accent: #81C784;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', Arial, sans-serif;
 }
-.container {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+
+/* Common Card Styles */
+.card {
+  @apply bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300;
 }
-@layer components {
-  /* .btn-primary {
-      @apply py-1.5 px-3 text-center bg-blue-700 rounded-md text-white;
-  } */
+
+/* Common Container Styles */
+.page-container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
+}
+
+/* Common Button Styles */
+.btn-primary {
+  @apply px-6 py-2.5 bg-green-600 text-white rounded-lg 
+         hover:bg-green-700 transition-colors duration-300
+         focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2;
+}
+
+.btn-secondary {
+  @apply px-6 py-2.5 border-2 border-green-600 text-green-600 rounded-lg
+         hover:bg-green-50 transition-colors duration-300
+         focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2;
+}
+
+/* Form Elements */
+.form-input {
+  @apply w-full px-4 py-2 border border-gray-300 rounded-lg 
+         focus:ring-2 focus:ring-green-500 focus:border-green-500
+         placeholder-gray-400 transition-colors duration-300;
+}
+
+.form-label {
+  @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+/* Section Headers */
+.section-title {
+  @apply text-2xl font-bold text-gray-800 mb-6;
+}
+
+/* Animation Classes */
+.fade-in {
+  @apply transition-opacity duration-300 ease-in-out;
+}
+
+/* Responsive Grid */
+.responsive-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-green-500 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-green-600;
+}
+
+/* Loading States */
+.loading-skeleton {
+  @apply animate-pulse bg-gray-200 rounded;
+}
+
+/* Page Transitions */
+.page-enter {
+  @apply opacity-0;
+}
+
+.page-enter-active {
+  @apply opacity-100 transition-opacity duration-300;
+}
+
+.page-exit {
+  @apply opacity-100;
+}
+
+.page-exit-active {
+  @apply opacity-0 transition-opacity duration-300;
 }

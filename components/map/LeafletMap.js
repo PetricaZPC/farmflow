@@ -39,6 +39,14 @@ function LeafletMap({ userEmail, userCrops }) {
 
   const [fieldTasks, setFieldTasks] = useState({});
 
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   useEffect(() => {
     if (userCrops && Object.keys(userCrops).length > 0) {
       console.log("Loading userCrops:", userCrops);
@@ -84,7 +92,7 @@ function LeafletMap({ userEmail, userCrops }) {
     return () => {
       if (popups && Object.keys(popups).length > 0) {
         console.log("Auto-saving crops on component unmount");
-        saveCropsToServer(popups);
+        saveCropsToServer(popups).catch(console.error);
       } else {
         console.log("No crops to save on unmount");
       }
@@ -100,7 +108,7 @@ function LeafletMap({ userEmail, userCrops }) {
     console.log("Starting auto-save interval");
     const autoSaveInterval = setInterval(() => {
       console.log("Auto-saving crops (periodic)");
-      saveCropsToServer(popups);
+      saveCropsToServer(popups).catch(console.error);
     }, 60000);
 
     return () => clearInterval(autoSaveInterval);
@@ -320,12 +328,12 @@ function LeafletMap({ userEmail, userCrops }) {
   };
 
   const saveCropsToServer = async (cropsData) => {
-    try {
-      if (!cropsData || Object.keys(cropsData).length === 0) {
-        console.log("No crops to save");
-        return false;
-      }
+    if (!isMounted.current || !cropsData || Object.keys(cropsData).length === 0) {
+      console.log("Skipping save - component unmounting or no data");
+      return false;
+    }
 
+    try {
       const cleanData = prepareDataForSaving(cropsData);
       console.log("Saving crops to server:", cleanData);
 
@@ -338,34 +346,24 @@ function LeafletMap({ userEmail, userCrops }) {
         body: JSON.stringify({ crops: cleanData }),
       });
 
+      if (response.status === 401) {
+        console.log("Session expired or unauthorized");
+        return false;
+      }
+
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Error response:", errorText);
-        throw new Error(`HTTP error! status: ${response.status}`);
+        console.error("Error saving crops:", errorText);
+        return false;
       }
 
       const data = await response.json();
-      console.log("Save response:", data);
       console.log("Crops saved successfully");
       return true;
     } catch (error) {
-      console.error("Error saving crops:", error);
+      console.error("Error in saveCropsToServer:", error);
       return false;
     }
-  };
-
-  const updateCrop = (id, newData) => {
-    const updatedPopups = {
-      ...popups,
-      [id]: {
-        ...popups[id],
-        ...newData,
-      },
-    };
-
-    setPopups(updatedPopups);
-
-    saveCropsToServer(updatedPopups);
   };
 
   return (

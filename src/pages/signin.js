@@ -12,83 +12,71 @@ function SignIn({
   message,
 }) {
   return (
-    <div>
-      <div className="flex items-center min-h-screen bg-white dark:bg-gray-900">
-        <div className="container mx-auto">
-          <div className="max-w-md mx-auto my-10">
-            <div className="text-center">
-              <h1 className="my-3 text-3xl font-semibold text-gray-700 dark:text-gray-200">
-                Sign in
-              </h1>
-              <p className="text-gray-500 dark:text-gray-400">
-                Sign in to access your account
-              </p>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="card max-w-md w-full space-y-8 p-8">
+        <div className="text-center">
+          <h2 className="section-title">Sign in to your account</h2>
+          <p className="mt-2 text-sm text-gray-600">Welcome back to FarmFlow</p>
+        </div>
+
+        <form className="mt-8 space-y-6" onSubmit={handleSignIn}>
+          <div className="rounded-md shadow-sm space-y-4">
+            <div>
+              <label
+                htmlFor="emailOrUsername"
+                className="form-label"
+              >
+                Email or Username
+              </label>
+              <input
+                id="emailOrUsername"
+                name="emailOrUsername"
+                type="text"
+                required
+                className="form-input"
+                value={emailOrUsername}
+                onChange={(e) => setEmailOrUsername(e.target.value)}
+              />
             </div>
-            <div className="m-7">
-              <form onSubmit={handleSignIn}>
-                <div className="mb-6">
-                  <label
-                    htmlFor="emailOrUsername"
-                    className="block mb-2 text-sm text-gray-600 dark:text-gray-400"
-                  >
-                    Email Address or Username
-                  </label>
-                  <input
-                    type="text"
-                    name="emailOrUsername"
-                    id="emailOrUsername"
-                    placeholder="Email or Username"
-                    className="w-full px-3 py-2 placeholder-gray-300 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-100 focus:border-indigo-300 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500 dark:border-gray-600 dark:focus:ring-gray-900 dark:focus:border-gray-500"
-                    value={emailOrUsername}
-                    onChange={(e) => setEmailOrUsername(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="mb-6">
-                  <div className="flex justify-between mb-2">
-                    <label
-                      htmlFor="password"
-                      className="text-sm text-gray-600 dark:text-gray-400"
-                    >
-                      Password
-                    </label>
-                  </div>
-                  <input
-                    type="password"
-                    name="password"
-                    id="password"
-                    placeholder="Your Password"
-                    className="w-full px-3 py-2 placeholder-gray-300 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-100 focus:border-indigo-300 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500 dark:border-gray-600 dark:focus:ring-gray-900 dark:focus:border-gray-500"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                {error && <p className="text-red-500">{error}</p>}
-                {message && <p className="text-green-500">{message}</p>}
-                <div className="mb-6">
-                  <button
-                    type="submit"
-                    className="w-full px-3 py-4 text-white bg-indigo-500 rounded-md focus:bg-indigo-600 focus:outline-none"
-                  >
-                    Sign in
-                  </button>
-                </div>
-                <p className="text-sm text-center text-gray-400">
-                  Don't have an account?{" "}
-                  <a
-                    href="#!"
-                    onClick={toggleForm}
-                    className="text-indigo-400 focus:outline-none focus:underline focus:text-indigo-500 dark:focus:border-indigo-800"
-                  >
-                    Sign up
-                  </a>
-                  .
-                </p>
-              </form>
+
+            <div>
+              <label
+                htmlFor="password"
+                className="form-label"
+              >
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                className="form-input"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
           </div>
-        </div>
+
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {message && <p className="text-green-500 text-sm">{message}</p>}
+
+          <div>
+            <button type="submit" className="btn-primary w-full">
+              Sign in
+            </button>
+          </div>
+
+          <p className="text-center text-sm text-gray-600">
+            Don't have an account?{" "}
+            <button
+              onClick={toggleForm}
+              className="text-green-600 hover:text-green-500 font-medium"
+            >
+              Sign up
+            </button>
+          </p>
+        </form>
       </div>
     </div>
   );
@@ -110,14 +98,14 @@ function SignUp({
 }) {
   return (
     <div>
-      <div className="flex items-center min-h-screen bg-white dark:bg-gray-900">
-        <div className="container mx-auto">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="card max-w-md w-full space-y-8 p-8">
           <div className="max-w-md mx-auto my-10">
             <div className="text-center">
-              <h1 className="my-3 text-3xl font-semibold text-gray-700 dark:text-gray-200">
+              <h1 className="my-3 text-3xl font-semibold text-gray-700 ">
                 Sign up
               </h1>
-              <p className="text-gray-500 dark:text-gray-400">
+              <p className="mt-2 text-sm text-gray-600">
                 Create your account
               </p>
             </div>
@@ -126,7 +114,7 @@ function SignUp({
                 <div className="mb-6">
                   <label
                     htmlFor="email"
-                    className="block mb-2 text-sm text-gray-600 dark:text-gray-400"
+                    className="block mb-2 text-sm text-gray-600 "
                   >
                     Email Address
                   </label>
@@ -135,7 +123,7 @@ function SignUp({
                     name="email"
                     id="email"
                     placeholder="you@company.com"
-                    className="w-full px-3 py-2 placeholder-gray-300 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-100 focus:border-indigo-300 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500 dark:border-gray-600 dark:focus:ring-gray-900 dark:focus:border-gray-500"
+                    className="w-full px-3 py-2 placeholder-gray-300 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-100 focus:border-indigo-300 "
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -144,7 +132,7 @@ function SignUp({
                 <div className="mb-6">
                   <label
                     htmlFor="username"
-                    className="block mb-2 text-sm text-gray-600 dark:text-gray-400"
+                    className="block mb-2 text-sm text-gray-600 "
                   >
                     Username
                   </label>
@@ -153,7 +141,7 @@ function SignUp({
                     name="username"
                     id="username"
                     placeholder="Your username"
-                    className="w-full px-3 py-2 placeholder-gray-300 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-100 focus:border-indigo-300 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500 dark:border-gray-600 dark:focus:ring-gray-900 dark:focus:border-gray-500"
+                    className="w-full px-3 py-2 placeholder-gray-300 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-100 focus:border-indigo-300 "
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
@@ -164,7 +152,7 @@ function SignUp({
                   <div className="flex justify-between mb-2">
                     <label
                       htmlFor="password"
-                      className="text-sm text-gray-600 dark:text-gray-400"
+                      className="text-sm text-gray-600 "
                     >
                       Password
                     </label>
@@ -174,7 +162,7 @@ function SignUp({
                     name="password"
                     id="password"
                     placeholder="Your Password"
-                    className="w-full px-3 py-2 placeholder-gray-300 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-100 focus:border-indigo-300 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500 dark:border-gray-600 dark:focus:ring-gray-900 dark:focus:border-gray-500"
+                    className="w-full px-3 py-2 placeholder-gray-300 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-100 focus:border-indigo-300 "
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -185,7 +173,7 @@ function SignUp({
                   <div className="flex justify-between mb-2">
                     <label
                       htmlFor="confirm-password"
-                      className="text-sm text-gray-600 dark:text-gray-400"
+                      className="text-sm text-gray-600 "
                     >
                       Confirm password
                     </label>
@@ -195,7 +183,7 @@ function SignUp({
                     name="confirm-password"
                     id="confirm-password"
                     placeholder="Enter your password again"
-                    className="w-full px-3 py-2 placeholder-gray-300 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-100 focus:border-indigo-300 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500 dark:border-gray-600 dark:focus:ring-gray-900 dark:focus:border-gray-500"
+                    className="w-full px-3 py-2 placeholder-gray-300 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-100 focus:border-indigo-300 "
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
@@ -206,17 +194,17 @@ function SignUp({
                 <div className="mb-6">
                   <button
                     type="submit"
-                    className="w-full px-3 py-4 text-white bg-indigo-500 rounded-md focus:bg-indigo-600 focus:outline-none"
+                    className="btn-primary w-full"
                   >
                     Sign up
                   </button>
                 </div>
-                <p className="text-sm text-center text-gray-400">
+                <p className="text-center text-sm text-gray-600">
                   Already have an account?{" "}
                   <a
                     href="#!"
                     onClick={toggleForm}
-                    className="text-indigo-400 focus:outline-none focus:underline focus:text-indigo-500 dark:focus:border-indigo-800"
+                    className="text-green-600 hover:text-green-500 font-medium"
                   >
                     Sign in
                   </a>
