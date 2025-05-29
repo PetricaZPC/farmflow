@@ -136,26 +136,51 @@ function LeafletMap({ userEmail, userCrops }) {
   };
 
   const handleEraseArea = (id) => {
+    console.log("Attempting to erase area with ID:", id);
+
+    // First remove the layer from the drawn items feature group
     const layers = drawnItemsRef.current.getLayers();
+    let layerFound = false;
+
     for (let i = 0; i < layers.length; i++) {
       const layer = layers[i];
+
       if (
-        layer.feature &&
-        layer.feature.properties &&
-        layer.feature.properties.id === id
+        (layer.feature &&
+          layer.feature.properties &&
+          layer.feature.properties.id === id) ||
+        (layer._layers &&
+          Object.values(layer._layers).some(
+            (l) => l.feature && l.feature.properties && l.feature.properties.id === id
+          ))
       ) {
+        console.log("Found layer to remove:", layer);
         drawnItemsRef.current.removeLayer(layer);
+        layerFound = true;
         break;
       }
     }
 
+    if (!layerFound) {
+      console.warn("Layer not found in feature group. Still removing from state.");
+    }
+
+    // Then remove the popup from state
     setPopups((prev) => {
       const newPopups = { ...prev };
       delete newPopups[id];
+      console.log("Removed popup from state. Remaining popups:", Object.keys(newPopups).length);
+
+      // Save the updated state to the server immediately
+      setTimeout(() => saveCropsToServer(newPopups), 100);
+
       return newPopups;
     });
 
+    // Update the areas state
     setAreas([...drawnItemsRef.current.getLayers()]);
+
+    console.log("Area erased successfully");
   };
 
   const handleAreaClick = (layer, latlng) => {
@@ -328,14 +353,18 @@ function LeafletMap({ userEmail, userCrops }) {
   };
 
   const saveCropsToServer = async (cropsData) => {
-    if (!isMounted.current || !cropsData || Object.keys(cropsData).length === 0) {
-      console.log("Skipping save - component unmounting or no data");
+    if (!cropsData || Object.keys(cropsData).length === 0) {
+      console.log("No crop data to save");
       return false;
     }
 
     try {
       const cleanData = prepareDataForSaving(cropsData);
-      console.log("Saving crops to server:", cleanData);
+      console.log(
+        "Attempting to save crops:",
+        Object.keys(cleanData).length,
+        "fields"
+      );
 
       const response = await fetch("/api/auth/saveCrops", {
         method: "POST",
@@ -346,25 +375,51 @@ function LeafletMap({ userEmail, userCrops }) {
         body: JSON.stringify({ crops: cleanData }),
       });
 
-      if (response.status === 401) {
-        console.log("Session expired or unauthorized");
+      const responseText = await response.text();
+      console.log("Save response:", response.status, responseText);
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error("Failed to parse response as JSON:", responseText);
         return false;
       }
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error saving crops:", errorText);
+        console.error("Error saving crops:", data.error || "Unknown error");
         return false;
       }
 
-      const data = await response.json();
-      console.log("Crops saved successfully");
+      console.log("Crops saved successfully:", data.message);
       return true;
     } catch (error) {
-      console.error("Error in saveCropsToServer:", error);
+      console.error("Exception in saveCropsToServer:", error);
       return false;
     }
   };
+
+  useEffect(() => {
+    if (!popups || Object.keys(popups).length === 0) {
+      return;
+    }
+
+    const saveData = async () => {
+      try {
+        await saveCropsToServer(popups);
+      } catch (error) {
+        console.error("Auto-save error:", error);
+      }
+    };
+
+    // Save immediately when crops change
+    saveData();
+
+    // Also set up periodic saving
+    const autoSaveInterval = setInterval(saveData, 60000);
+
+    return () => clearInterval(autoSaveInterval);
+  }, [popups]);
 
   return (
     <div className={styles.cont}>

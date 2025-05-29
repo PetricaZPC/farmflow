@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Map from '../../components/map/Map';
 import Navbar from './components/navbar';
 import withAuth from './api/auth/withAuth';
-import Footer from './components/footer';
+
 
 function MapPage({ userEmail }) {
     const [userCrops, setUserCrops] = useState(null);
@@ -86,7 +86,7 @@ function MapPage({ userEmail }) {
                 </div>
             )}
         </div>
-        <Footer />
+  
         </>
     );
 }
