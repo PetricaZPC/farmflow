@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import logo from '../../../public/Field.png';
+import logo from '../../../public/field.png';
 import { deleteCookie, getCookie } from 'cookies-next';
 
 export default function Navbar({ userEmail, profileData }) {
