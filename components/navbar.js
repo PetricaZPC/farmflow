@@ -2,17 +2,23 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import logo from '../../../public/field.png';
+import logo from '../public/field.png';
 import { deleteCookie, getCookie } from 'cookies-next';
 
 export default function Navbar({ userEmail, profileData }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [username, setUsername] = useState('');
-  const [profileImage, setProfileImage] = useState(null);
+  const [fetchedProfile, setFetchedProfile] = useState(null);
   const [localUserEmail, setLocalUserEmail] = useState(userEmail);
   const dropdownRef = useRef(null);
   const router = useRouter();
+
+  const effectiveProfileData = profileData || fetchedProfile;
+  const displayUsername =
+    (effectiveProfileData?.username ||
+      (localUserEmail ? localUserEmail.split('@')[0] : '')) ||
+    '';
+  const displayProfileImage = effectiveProfileData?.profileImageUrl || null;
 
   useEffect(() => {
     const checkSession = async () => {
@@ -21,9 +27,9 @@ export default function Navbar({ userEmail, profileData }) {
         if (sessionId) {
           try {
             const response = await fetch('/api/auth/checkAuth', {
-              credentials: 'include'
+              credentials: 'include',
             });
-            
+
             if (response.ok) {
               const data = await response.json();
               if (data.email) {
@@ -31,52 +37,45 @@ export default function Navbar({ userEmail, profileData }) {
               }
             }
           } catch (error) {
-            console.error("Error checking session:", error);
+            console.error('Error checking session:', error);
           }
         }
       } else {
         setLocalUserEmail(userEmail);
       }
     };
-    
+
     checkSession();
   }, [userEmail]);
 
   useEffect(() => {
     const fetchProfileData = async () => {
       if (!localUserEmail) return;
-      
+
       try {
         const response = await fetch('/api/profile/userProfile');
         if (response.ok) {
           const data = await response.json();
-          setUsername(data.username || localUserEmail.split('@')[0]);
-          setProfileImage(data.profileImageUrl);
+          setFetchedProfile(data);
         }
       } catch (error) {
         console.error('Error fetching profile data:', error);
       }
     };
-    
+
     if (!profileData && localUserEmail) {
       fetchProfileData();
-    } else if (profileData && localUserEmail) {
-      setUsername(profileData.username || localUserEmail.split('@')[0]);
-      setProfileImage(profileData.profileImageUrl);
     }
   }, [localUserEmail, profileData]);
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
         setIsMobileMenuOpen(false);
       }
     }
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -87,17 +86,16 @@ export default function Navbar({ userEmail, profileData }) {
     try {
       setIsDropdownOpen(false);
       setIsMobileMenuOpen(false);
-      
+
       await fetch('/api/auth/logout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
-      
+
       deleteCookie('sessionId', { path: '/' });
-      setUsername('');
-      setProfileImage(null);
+      setFetchedProfile(null);
       setLocalUserEmail(null);
-      
+
       router.push('/signin');
     } catch (error) {
       console.error('Error signing out:', error);
@@ -117,10 +115,24 @@ export default function Navbar({ userEmail, profileData }) {
 
           {/* Desktop nav links */}
           <div className="hidden md:flex space-x-6 items-center">
-            <Link href="/map" className={`px-3 py-2 rounded-md text-base font-medium ${router.pathname === '/map' ? 'text-green-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}>
+            <Link
+              href="/map"
+              className={`px-3 py-2 rounded-md text-base font-medium ${
+                router.pathname === '/map'
+                  ? 'text-green-600'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
               Map
             </Link>
-            <Link href="/community" className={`px-3 py-2 rounded-md text-base font-medium ${router.pathname === '/community' ? 'text-green-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}>
+            <Link
+              href="/community"
+              className={`px-3 py-2 rounded-md text-base font-medium ${
+                router.pathname === '/community'
+                  ? 'text-green-600'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
               Community
             </Link>
             {/* User Profile on desktop */}
@@ -133,10 +145,10 @@ export default function Navbar({ userEmail, profileData }) {
                   <span className="sr-only">Open user menu</span>
                   <div className="flex items-center space-x-3 px-3 py-1 border border-gray-300 rounded-full hover:bg-gray-100">
                     <div className="flex-shrink-0 h-8 w-8 overflow-hidden rounded-full bg-gray-200">
-                      {profileImage ? (
+                      {displayProfileImage ? (
                         <Image
-                          src={profileImage}
-                          alt={username}
+                          src={displayProfileImage}
+                          alt={displayUsername}
                           width={32}
                           height={32}
                           className="h-full w-full object-cover"
@@ -144,20 +156,34 @@ export default function Navbar({ userEmail, profileData }) {
                       ) : (
                         <div className="h-full w-full flex items-center justify-center bg-green-100 text-green-600">
                           <span className="text-sm font-medium">
-                            {(username || 'U').charAt(0).toUpperCase()}
+                            {(displayUsername || 'U').charAt(0).toUpperCase()}
                           </span>
                         </div>
                       )}
                     </div>
-                    <span className="text-gray-700 font-medium">{username}</span>
-                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                    <span className="text-gray-700 font-medium">{displayUsername}</span>
+                    <svg
+                      className="w-4 h-4 text-gray-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M19 9l-7 7-7-7"
+                      ></path>
                     </svg>
                   </div>
                 </button>
                 {isDropdownOpen && (
                   <div className="absolute right-0 w-48 py-1 mt-2 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
-                    <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <Link
+                      href="/profile"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
                       Your Profile
                     </Link>
                     <button
@@ -170,7 +196,10 @@ export default function Navbar({ userEmail, profileData }) {
                 )}
               </div>
             ) : (
-              <Link href="/signin" className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700">
+              <Link
+                href="/signin"
+                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
+              >
                 Sign in
               </Link>
             )}
@@ -184,11 +213,27 @@ export default function Navbar({ userEmail, profileData }) {
               className="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-500"
             >
               {!isMobileMenuOpen ? (
-                <svg className="block h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                <svg
+                  className="block h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               ) : (
-                <svg className="block h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                <svg
+                  className="block h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M6 18L18 6M6 6l12 12" />
                 </svg>
               )}
@@ -203,14 +248,22 @@ export default function Navbar({ userEmail, profileData }) {
           <div className="px-4 py-3 space-y-1">
             <Link
               href="/map"
-              className={`block px-3 py-2 rounded-md text-base font-medium ${router.pathname === '/map' ? 'text-green-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
+              className={`block px-3 py-2 rounded-md text-base font-medium ${
+                router.pathname === '/map'
+                  ? 'text-green-600'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Map
             </Link>
             <Link
               href="/community"
-              className={`block px-3 py-2 rounded-md text-base font-medium ${router.pathname === '/community' ? 'text-green-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
+              className={`block px-3 py-2 rounded-md text-base font-medium ${
+                router.pathname === '/community'
+                  ? 'text-green-600'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Community

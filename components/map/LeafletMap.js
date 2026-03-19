@@ -1,7 +1,7 @@
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw/dist/leaflet.draw.css";
 import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import L from "leaflet";
 import "leaflet-draw";
 import styles from "../../src/styles/Home.module.css";
@@ -41,6 +41,128 @@ function LeafletMap({ userEmail, userCrops }) {
 
   const isMounted = useRef(true);
 
+  const prepareDataForSaving = (data) => {
+    const cleanData = {};
+
+    Object.keys(data).forEach((key) => {
+      cleanData[key] = {
+        cropName: data[key].cropName || "",
+        plantingDate: data[key].plantingDate || "",
+        area: data[key].area || null,
+        notes: data[key].notes || "",
+        aiRecommendations: data[key].aiRecommendations || "",
+      };
+    });
+
+    return cleanData;
+  };
+
+  const saveCropsToServer = useCallback(async (cropsData) => {
+    if (!cropsData || Object.keys(cropsData).length === 0) {
+      console.log("No crop data to save");
+      return false;
+    }
+
+    try {
+      const cleanData = prepareDataForSaving(cropsData);
+      console.log(
+        "Attempting to save crops:",
+        Object.keys(cleanData).length,
+        "fields"
+      );
+
+      const response = await fetch("/api/auth/saveCrops", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ crops: cleanData }),
+      });
+
+      const responseText = await response.text();
+      console.log("Save response:", response.status, responseText);
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error("Failed to parse response as JSON:", responseText);
+        return false;
+      }
+
+      if (!response.ok) {
+        console.error("Error saving crops:", data.error || "Unknown error");
+        return false;
+      }
+
+      console.log("Crops saved successfully:", data.message);
+      return true;
+    } catch (error) {
+      console.error("Exception in saveCropsToServer:", error);
+      return false;
+    }
+  }, []);
+
+  const handleFetchCommunityTips = useCallback(
+    async (cropName) => {
+      if (!cropName) return;
+
+      setActiveCrop(cropName);
+      setShowCommunityPanel(true);
+
+      try {
+        const tips = await fetchCommunityTips(cropName);
+        setCommunityTips(tips || []);
+      } catch (error) {
+        console.error("Error fetching community tips:", error);
+        setCommunityTips([]);
+      }
+    },
+    [setActiveCrop, setShowCommunityPanel, setCommunityTips]
+  );
+
+  const handleAreaClick = useCallback(
+    (layer, latlng) => {
+      let id;
+
+      if (layer.feature && layer.feature.properties && layer.feature.properties.id) {
+        id = layer.feature.properties.id;
+      } else if (
+        layer.options &&
+        layer.options.data &&
+        layer.options.data.properties &&
+        layer.options.data.properties.id
+      ) {
+        id = layer.options.data.properties.id;
+      } else {
+        id = layer.properties ? layer.properties.id : null;
+      }
+
+      if (!id) {
+        console.error("Could not determine ID from layer:", layer);
+        return;
+      }
+
+      console.log(`Clicked on area with ID: ${id}`);
+
+      setPopups((prev) => ({
+        ...prev,
+        [id]: {
+          ...prev[id],
+          show: true,
+          position: latlng,
+        },
+      }));
+
+      const cropName = popups[id]?.cropName;
+      if (cropName) {
+        handleFetchCommunityTips(cropName);
+      }
+    },
+    [popups, handleFetchCommunityTips]
+  );
+
   useEffect(() => {
     return () => {
       isMounted.current = false;
@@ -50,6 +172,7 @@ function LeafletMap({ userEmail, userCrops }) {
   useEffect(() => {
     if (userCrops && Object.keys(userCrops).length > 0) {
       console.log("Loading userCrops:", userCrops);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPopups(userCrops);
 
       const newFeatureGroup = new L.FeatureGroup();
@@ -86,18 +209,7 @@ function LeafletMap({ userEmail, userCrops }) {
       setAreas([...newFeatureGroup.getLayers()]);
     }
     setLoading(false);
-  }, [userCrops]);
-
-  useEffect(() => {
-    return () => {
-      if (popups && Object.keys(popups).length > 0) {
-        console.log("Auto-saving crops on component unmount");
-        saveCropsToServer(popups).catch(console.error);
-      } else {
-        console.log("No crops to save on unmount");
-      }
-    };
-  }, [popups]);
+  }, [userCrops, handleAreaClick]);
 
   useEffect(() => {
     if (!popups || Object.keys(popups).length === 0) {
@@ -106,13 +218,27 @@ function LeafletMap({ userEmail, userCrops }) {
     }
 
     console.log("Starting auto-save interval");
-    const autoSaveInterval = setInterval(() => {
-      console.log("Auto-saving crops (periodic)");
-      saveCropsToServer(popups).catch(console.error);
-    }, 60000);
 
-    return () => clearInterval(autoSaveInterval);
-  }, [popups]);
+    const saveData = async () => {
+      try {
+        await saveCropsToServer(popups);
+      } catch (error) {
+        console.error("Auto-save error:", error);
+      }
+    };
+
+    // Save immediately when crops change
+    saveData();
+
+    // Also set up periodic saving
+    const autoSaveInterval = setInterval(saveData, 60000);
+
+    return () => {
+      clearInterval(autoSaveInterval);
+      // Attempt one final save on unmount
+      saveData().catch(console.error);
+    };
+  }, [popups, saveCropsToServer]);
 
   const handleClosePopup = (id) => {
     setPopups((prev) => ({
@@ -183,62 +309,6 @@ function LeafletMap({ userEmail, userCrops }) {
     console.log("Area erased successfully");
   };
 
-  const handleAreaClick = (layer, latlng) => {
-    let id;
-
-    if (
-      layer.feature &&
-      layer.feature.properties &&
-      layer.feature.properties.id
-    ) {
-      id = layer.feature.properties.id;
-    } else if (
-      layer.options &&
-      layer.options.data &&
-      layer.options.data.properties &&
-      layer.options.data.properties.id
-    ) {
-      id = layer.options.data.properties.id;
-    } else {
-      id = layer.properties ? layer.properties.id : null;
-    }
-
-    if (!id) {
-      console.error("Could not determine ID from layer:", layer);
-      return;
-    }
-
-    console.log(`Clicked on area with ID: ${id}`);
-
-    setPopups((prev) => ({
-      ...prev,
-      [id]: {
-        ...prev[id],
-        show: true,
-        position: latlng,
-      },
-    }));
-
-    const cropName = popups[id]?.cropName;
-    if (cropName) {
-      handleFetchCommunityTips(cropName);
-    }
-  };
-
-  const handleFetchCommunityTips = async (cropName) => {
-    if (!cropName) return;
-
-    setActiveCrop(cropName);
-    setShowCommunityPanel(true);
-
-    try {
-      const tips = await fetchCommunityTips(cropName);
-      setCommunityTips(tips || []);
-    } catch (error) {
-      console.error("Error fetching community tips:", error);
-      setCommunityTips([]);
-    }
-  };
 
   const handleShareTip = async () => {
     if (!activeCrop || !newTip.trim()) {
@@ -336,69 +406,6 @@ function LeafletMap({ userEmail, userCrops }) {
     }
   };
 
-  const prepareDataForSaving = (data) => {
-    const cleanData = {};
-
-    Object.keys(data).forEach((key) => {
-      cleanData[key] = {
-        cropName: data[key].cropName || "",
-        plantingDate: data[key].plantingDate || "",
-        area: data[key].area || null,
-        notes: data[key].notes || "",
-        aiRecommendations: data[key].aiRecommendations || "",
-      };
-    });
-
-    return cleanData;
-  };
-
-  const saveCropsToServer = async (cropsData) => {
-    if (!cropsData || Object.keys(cropsData).length === 0) {
-      console.log("No crop data to save");
-      return false;
-    }
-
-    try {
-      const cleanData = prepareDataForSaving(cropsData);
-      console.log(
-        "Attempting to save crops:",
-        Object.keys(cleanData).length,
-        "fields"
-      );
-
-      const response = await fetch("/api/auth/saveCrops", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ crops: cleanData }),
-      });
-
-      const responseText = await response.text();
-      console.log("Save response:", response.status, responseText);
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (e) {
-        console.error("Failed to parse response as JSON:", responseText);
-        return false;
-      }
-
-      if (!response.ok) {
-        console.error("Error saving crops:", data.error || "Unknown error");
-        return false;
-      }
-
-      console.log("Crops saved successfully:", data.message);
-      return true;
-    } catch (error) {
-      console.error("Exception in saveCropsToServer:", error);
-      return false;
-    }
-  };
-
   useEffect(() => {
     if (!popups || Object.keys(popups).length === 0) {
       return;
@@ -419,7 +426,7 @@ function LeafletMap({ userEmail, userCrops }) {
     const autoSaveInterval = setInterval(saveData, 60000);
 
     return () => clearInterval(autoSaveInterval);
-  }, [popups]);
+  }, [popups, saveCropsToServer]);
 
   return (
     <div className={styles.cont}>

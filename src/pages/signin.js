@@ -68,7 +68,7 @@ function SignIn({
           </div>
 
           <p className="text-center text-sm text-gray-600">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <button
               onClick={toggleForm}
               className="text-green-600 hover:text-green-500 font-medium"

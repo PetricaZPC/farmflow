@@ -1,13 +1,27 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useCallback } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet-draw";
 
 function MapEvents({ drawnItemsRef, setPopups, setAreas }) {
-  const mapRef = useRef(null);
-
   const map = useMap();
-  mapRef.current = map;
+
+  const handleAreaClick = useCallback(
+    (layer, latlng) => {
+      const id = layer.feature?.properties?.id;
+      if (!id) return;
+
+      setPopups((prev) => ({
+        ...prev,
+        [id]: {
+          ...prev[id],
+          show: true,
+          position: latlng,
+        },
+      }));
+    },
+    [setPopups]
+  );
 
   useEffect(() => {
     if (!map) return;
@@ -124,20 +138,7 @@ function MapEvents({ drawnItemsRef, setPopups, setAreas }) {
       map.off(L.Draw.Event.EDITED);
       map.off(L.Draw.Event.DELETED);
     };
-  }, [map, drawnItemsRef, setPopups, setAreas]);
-
-  const handleAreaClick = (layer, latlng) => {
-    const id = layer.feature.properties.id;
-    
-    setPopups((prev) => ({
-      ...prev,
-      [id]: {
-        ...prev[id],
-        show: true,
-        position: latlng,
-      },
-    }));
-  };
+  }, [map, drawnItemsRef, setPopups, setAreas, handleAreaClick]);
 
   return null;
 }

@@ -10,7 +10,12 @@ export const config = {
   },
 };
 
-export default async function handler(req, res) {
+/**
+ * POST /api/messages/postMessage
+ *
+ * Creates a new message entry for the authenticated user.
+ */
+export default async function postMessageHandler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
@@ -30,17 +35,17 @@ export default async function handler(req, res) {
             });
         });
 
-        const client = await clientPromise;
-        const db = client.db('accounts');
+        const mongoClient = await clientPromise;
+        const accountsDb = mongoClient.db('accounts');
+
+        const usersCollection = accountsDb.collection('users');
+        const authenticatedUser = await usersCollection.findOne({ sessionId });
         
-        const users = db.collection('users');
-        const user = await users.findOne({ sessionId });
-        
-        if (!user) {
+        if (!authenticatedUser) {
             return res.status(401).json({ error: 'Not authenticated' });
         }
 
-        if (!user.friends || user.friends.length === 0) {
+        if (!Array.isArray(authenticatedUser.friends) || authenticatedUser.friends.length === 0) {
             return res.status(403).json({ error: 'You need to add at least one friend to post messages' });
         }
 
@@ -62,27 +67,27 @@ export default async function handler(req, res) {
 
         const content = fields.content ? fields.content.toString() : '';
         
-        const message = {
-            content: content,
-            authorId: user._id.toString(),
-            authorEmail: user.email,
+        const newMessage = {
+            content,
+            authorId: authenticatedUser._id.toString(),
+            authorEmail: authenticatedUser.email,
             timestamp: new Date(),
-            imageUrl: imageUrl,
+            imageUrl,
         };
 
-        const messagesCollection = db.collection('messages');
-        const result = await messagesCollection.insertOne(message);
-        
-        res.status(201).json({
+        const messagesCollection = accountsDb.collection('messages');
+        const insertResult = await messagesCollection.insertOne(newMessage);
+
+        return res.status(201).json({
             message: {
-                ...message,
-                _id: result.insertedId,
+                ...newMessage,
+                _id: insertResult.insertedId,
                 authorDetails: {
-                    username: user.username || user.email,
-                    email: user.email,
-                    profileImageUrl: user.profileImageUrl
-                }
-            }
+                    username: authenticatedUser.username || authenticatedUser.email,
+                    email: authenticatedUser.email,
+                    profileImageUrl: authenticatedUser.profileImageUrl,
+                },
+            },
         });
     } catch (error) {
         console.error('Error posting message:', error);

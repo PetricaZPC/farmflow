@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { getCookie } from 'cookies-next';
 
 const withAuth = (WrappedComponent) => {
-    return (props) => {
+    const WithAuth = (props) => {
         const router = useRouter();
         const [isAuthenticated, setIsAuthenticated] = useState(false);
         const [loading, setLoading] = useState(true);
@@ -13,7 +13,7 @@ const withAuth = (WrappedComponent) => {
         useEffect(() => {
             const checkAuthentication = async () => {
                 const sessionId = getCookie('sessionId');
-                if (sessionId) {
+                if (!sessionId) {
                     router.replace('/signin');
                     return;
                 }
@@ -47,7 +47,7 @@ const withAuth = (WrappedComponent) => {
         }, [router]);
 
         if (loading) {
-           return;
+            return null;
         }
 
         if (!isAuthenticated) {
@@ -56,6 +56,10 @@ const withAuth = (WrappedComponent) => {
 
         return <WrappedComponent {...props} userEmail={userEmail} userCrops={userCrops} />;
     };
+
+    WithAuth.displayName = `WithAuth(${WrappedComponent.displayName || WrappedComponent.name || 'Component'})`;
+
+    return WithAuth;
 };
 
 export default withAuth;

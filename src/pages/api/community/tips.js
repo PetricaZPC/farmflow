@@ -1,6 +1,11 @@
 import clientPromise from '../auth/mongodb';
 
-export default async function handler(req, res) {
+/**
+ * GET /api/community/tips
+ *
+ * Returns up to 20 latest community tips for the requested crop.
+ */
+export default async function getCropTipsHandler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

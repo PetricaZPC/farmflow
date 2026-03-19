@@ -2,7 +2,12 @@ import clientPromise from './mongodb';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 
-export default async function handler(req, res) {
+/**
+ * POST /api/auth/register
+ *
+ * Creates a new user account and starts a session.
+ */
+export default async function registerHandler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
@@ -40,20 +45,20 @@ export default async function handler(req, res) {
     }
 
     try {
-        const client = await clientPromise;
-        const db = client.db('accounts'); 
-        const users = db.collection('users');
+        const mongoClient = await clientPromise;
+        const accountsDb = mongoClient.db('accounts');
+        const usersCollection = accountsDb.collection('users');
 
-        const existingUser = await users.findOne({ email: email.toLowerCase() });
+        const existingUser = await usersCollection.findOne({ email: email.toLowerCase() });
         if (existingUser) {
             return res.status(400).json({ error: 'User already exists with this email' });
         }
 
         if (finalUsername) {
-            const existingUsername = await users.findOne({ 
-                username: new RegExp(`^${finalUsername}$`, 'i')
+            const existingUsername = await usersCollection.findOne({
+                username: new RegExp(`^${finalUsername}$`, 'i'),
             });
-            
+
             if (existingUsername) {
                 return res.status(400).json({ error: 'Username is already taken' });
             }
@@ -79,15 +84,7 @@ export default async function handler(req, res) {
 
         res.setHeader('Set-Cookie', `sessionId=${sessionId}; HttpOnly; Path=/; Max-Age=86400`);
 
-        res.status(201).json({ message: 'User registered successfully' });
-
-        // In saveCrops.js
-        console.log('User found:', user.email);
-        console.log('Saving crops:', Object.keys(crops).length);
-
-        // Then after the update
-        const updatedUser = await users.findOne({ sessionId: sessionId });
-        console.log('After update, crops:', Object.keys(updatedUser.crops).length);
+        return res.status(201).json({ message: 'User registered successfully' });
     } catch (error) {
         console.error('Error during registration:', error);
         res.status(500).json({ error: 'An error occurred while registering' });

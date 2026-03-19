@@ -1,23 +1,32 @@
 import clientPromise from './mongodb';
 
-export default async function handler(req, res) {
+/**
+ * GET /api/auth/checkAuth
+ *
+ * Validates user session and returns basic profile data.
+ */
+export default async function checkAuthHandler(req, res) {
   try {
     const sessionId = req.cookies.sessionId;
     if (!sessionId) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const client = await clientPromise;
-    const db = client.db('accounts'); 
-    const users = db.collection('users'); 
+    const mongoClient = await clientPromise;
+    const accountsDb = mongoClient.db('accounts');
+    const usersCollection = accountsDb.collection('users');
 
-    const user = await users.findOne({ sessionId });
-    if (!user) {
+    const authenticatedUser = await usersCollection.findOne({ sessionId });
+    if (!authenticatedUser) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    res.status(200).json({ message: "Authenticated", email: user.email, crops: user.crops });
+    return res.status(200).json({
+      message: "Authenticated",
+      email: authenticatedUser.email,
+      crops: authenticatedUser.crops,
+    });
   } catch (error) {
-    res.status(401).json({ message: "Not authenticated" });
+    return res.status(401).json({ message: "Not authenticated" });
   }
 }

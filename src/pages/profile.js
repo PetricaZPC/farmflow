@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-import Navbar from './components/navbar';
+import Navbar from '../../components/navbar';
 import withAuth from './api/auth/withAuth';
-import Footer from './components/footer';
+import Footer from '../../components/footer';
 
 function Profile({ userEmail }) {
   const router = useRouter();
@@ -326,10 +326,12 @@ function Profile({ userEmail }) {
             <div className="absolute -bottom-16 left-4 md:left-10">
               <div className="relative h-24 w-24 md:h-32 md:w-32 rounded-full border-4 border-white overflow-hidden bg-gray-200">
                 {profileData.profileImageUrl ? (
-                  <img
+                  <Image
                     src={profileData.profileImageUrl}
                     alt={profileData.username || userEmail}
-                    className="h-full w-full object-cover"
+                    fill
+                    className="object-cover"
+                    unoptimized
                   />
                 ) : (
                   <div className="h-full w-full flex items-center justify-center bg-green-100 text-green-600">
@@ -491,10 +493,12 @@ function Profile({ userEmail }) {
                         <div className="flex items-center">
                           <div className="h-10 w-10 rounded-full mr-3 overflow-hidden bg-gray-200">
                             {request.fromProfileImageUrl ? (
-                              <img
+                              <Image
                                 src={request.fromProfileImageUrl}
                                 alt={request.fromUsername || request.fromEmail}
-                                className="h-full w-full object-cover"
+                                fill
+                                className="object-cover"
+                                unoptimized
                               />
                             ) : (
                               <div className="h-full w-full flex items-center justify-center bg-blue-100 text-blue-600">
@@ -545,17 +549,19 @@ function Profile({ userEmail }) {
               </h3>
               
               {friends.length === 0 ? (
-                <p className="text-gray-500 text-sm">You haven't added any friends yet</p>
+                <p className="text-gray-500 text-sm">You haven&apos;t added any friends yet</p>
               ) : (
                 <div className="space-y-3">
                   {friends.map(friend => (
                     <div key={friend._id} className="flex items-center">
                       <div className="h-10 w-10 rounded-full mr-3 overflow-hidden bg-gray-200">
                         {friend.profileImageUrl ? (
-                          <img
+                          <Image
                             src={friend.profileImageUrl}
                             alt={friend.username || friend.email}
-                            className="h-full w-full object-cover"
+                            fill
+                            className="object-cover"
+                            unoptimized
                           />
                         ) : (
                           <div className="h-full w-full flex items-center justify-center bg-green-100 text-green-600">
@@ -589,7 +595,7 @@ function Profile({ userEmail }) {
                   <div className="text-gray-400 text-4xl mb-3">
                     <i className="fa fa-seedling"></i>
                   </div>
-                  <p className="text-gray-500">You haven't added any crops yet</p>
+                  <p className="text-gray-500">You haven&apos;t added any crops yet</p>
                   <button 
                     onClick={() => router.push('/map')}
                     className="mt-4 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700"

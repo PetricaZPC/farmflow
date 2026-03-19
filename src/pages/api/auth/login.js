@@ -3,7 +3,12 @@ import bcrypt from "bcryptjs";
 import { setCookie } from "cookies-next";
 import { v4 as uuidv4 } from "uuid";
 
-export default async function handler(req, res) {
+/**
+ * POST /api/auth/login
+ *
+ * Authenticates a user by email/username and password.
+ */
+export default async function loginHandler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
@@ -17,11 +22,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    const client = await clientPromise;
-    const db = client.db("accounts");
-    const users = db.collection("users");
+    const mongoClient = await clientPromise;
+    const accountsDb = mongoClient.db("accounts");
+    const usersCollection = accountsDb.collection("users");
 
-    const user = await users.findOne({
+    const user = await usersCollection.findOne({
       $or: [
         { email: emailOrUsername.toLowerCase() },
         { username: emailOrUsername },

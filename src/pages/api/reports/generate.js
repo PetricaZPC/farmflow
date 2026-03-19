@@ -1,6 +1,11 @@
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
-export default async function handler(req, res) {
+/**
+ * GET/POST /api/reports/generate
+ *
+ * Generates a PDF report from submitted field data.
+ */
+export default async function generateReportHandler(req, res) {
   if (req.method !== "GET" && req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }

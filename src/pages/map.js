@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Map from '../../components/map/Map';
-import Navbar from './components/navbar';
+import Navbar from '../../components/navbar';
 import withAuth from './api/auth/withAuth';
 
 

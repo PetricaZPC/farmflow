@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import Navbar from './components/navbar';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import Image from 'next/image';
+import Navbar from '../../components/navbar';
 import withAuth from './api/auth/withAuth';
 import io from 'socket.io-client'; // Import socket.io
 import 'leaflet/dist/leaflet.css';
@@ -47,53 +48,56 @@ function Community({ userEmail }) {
     const [newMessageAlert, setNewMessageAlert] = useState(false);
 
     // Function to fetch messages from the database
-    const fetchMessages = async (showLoading = true) => {
-        if (showLoading) {
-            setLoading(true);
-        }
-        
-        try {
-            const response = await fetch('/api/messages/getMessages', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
+    const fetchMessages = useCallback(
+        async (showLoading = true) => {
+            if (showLoading) {
+                setLoading(true);
             }
-
-            const data = await response.json();
             
-            if (data && Array.isArray(data.messages)) {
-                setMessages(data.messages);
-                // Initialize liked messages state based on server data
-                const likedMessageIds = new Set();
-                data.messages.forEach(message => {
-                    if (message.reactedUsers && 
-                        message.reactedUsers.like && 
-                        message.reactedUsers.like.includes(userEmail)) {
-                        likedMessageIds.add(message._id);
+            try {
+                const response = await fetch('/api/messages/getMessages', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
                     }
                 });
-                setUserLikedMessages(likedMessageIds);
-            } else {
-                console.warn("Unexpected response format:", data);
-                setMessages([]);
+    
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+    
+                const data = await response.json();
+                
+                if (data && Array.isArray(data.messages)) {
+                    setMessages(data.messages);
+                    // Initialize liked messages state based on server data
+                    const likedMessageIds = new Set();
+                    data.messages.forEach(message => {
+                        if (message.reactedUsers && 
+                            message.reactedUsers.like && 
+                            message.reactedUsers.like.includes(userEmail)) {
+                            likedMessageIds.add(message._id);
+                        }
+                    });
+                    setUserLikedMessages(likedMessageIds);
+                } else {
+                    console.warn("Unexpected response format:", data);
+                    setMessages([]);
+                }
+            } catch (error) {
+                console.error('Error fetching messages:', error);
+                setMessages([]); 
+            } finally {
+                if (showLoading) {
+                    setLoading(false);
+                }
             }
-        } catch (error) {
-            console.error('Error fetching messages:', error);
-            setMessages([]); 
-        } finally {
-            if (showLoading) {
-                setLoading(false);
-            }
-        }
-    };
+        },
+        [userEmail]
+    );
 
     // Function to fetch friends list
-    const fetchFriends = async () => {
+    const fetchFriends = useCallback(async () => {
         try {
             const response = await fetch('/api/profile/getFriends', {
                 method: 'GET',
@@ -111,7 +115,7 @@ function Community({ userEmail }) {
         } catch (error) {
             console.error('Error fetching friends:', error);
         }
-    };
+    }, []);
 
     // Handle image selection
     const handleImageChange = (e) => {
@@ -235,7 +239,7 @@ function Community({ userEmail }) {
         
         // Clean up interval on unmount
         return () => clearInterval(intervalId);
-    }, []);
+    }, [fetchFriends, fetchMessages]);
 
     useEffect(() => {
         // Initialize WebSocket connection
@@ -447,7 +451,7 @@ function Community({ userEmail }) {
             <div className="flex-grow flex justify-center overflow-hidden">
                 <div className="w-full max-w-2xl border-x bg-gray-50 flex flex-col">
                     <nav className="flex py-4 px-4 border-b bg-white items-center justify-between z-10">
-                        <h1 className="font-extrabold tracking-wide text-lg">Farmers' Chat</h1>
+                        <h1 className="font-extrabold tracking-wide text-lg">Farmers&apos; Chat</h1>
                         <div className="text-green-600">
                             <i className="fa fa-leaf"></i>
                         </div>
@@ -455,7 +459,7 @@ function Community({ userEmail }) {
                     
                     {friends.length === 0 && (
                         <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4">
-                            <p className="font-bold">You don't have any friends yet!</p>
+                            <p className="font-bold">You don&apos;t have any friends yet!</p>
                             <p>Add friends in your profile to start chatting.</p>
                             <button 
                                 onClick={() => router.push('/profile')}
@@ -489,12 +493,14 @@ function Community({ userEmail }) {
                                         <div className="py-2 px-5 bg-white">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center space-x-3">
-                                                    <div className="rounded-full h-12 w-12 overflow-hidden bg-green-100">
+                                                    <div className="relative rounded-full h-12 w-12 overflow-hidden bg-green-100">
                                                         {message.authorDetails?.profileImageUrl ? (
-                                                            <img 
+                                                            <Image
                                                                 src={message.authorDetails.profileImageUrl}
                                                                 alt={message.authorDetails?.username || message.authorEmail}
-                                                                className="h-full w-full object-cover"
+                                                                fill
+                                                                className="object-cover"
+                                                                unoptimized
                                                             />
                                                         ) : (
                                                             <div className="h-full w-full flex items-center justify-center text-green-600">
@@ -515,11 +521,13 @@ function Community({ userEmail }) {
                                             <div className="mt-2 ml-14">
                                                 {/* Display image if present */}
                                                 {message.imageUrl && (
-                                                    <div className="mb-3">
-                                                        <img 
-                                                            src={message.imageUrl} 
-                                                            alt="Crop image" 
-                                                            className="rounded-lg max-h-64 object-contain"
+                                                    <div className="mb-3 relative h-64 w-full">
+                                                        <Image
+                                                            src={message.imageUrl}
+                                                            alt="Crop image"
+                                                            fill
+                                                            className="rounded-lg object-contain"
+                                                            unoptimized
                                                         />
                                                     </div>
                                                 )}
@@ -632,11 +640,13 @@ function Community({ userEmail }) {
                     <div className="py-4 px-4 bg-white border-t">
                         <form onSubmit={postMessage} className="space-y-3">
                             {imagePreview && (
-                                <div className="relative inline-block">
-                                    <img 
-                                        src={imagePreview} 
-                                        alt="Preview" 
-                                        className="h-24 object-cover rounded-lg mr-2" 
+                                <div className="relative inline-block h-24 w-24 mr-2">
+                                    <Image
+                                        src={imagePreview}
+                                        alt="Preview"
+                                        fill
+                                        className="rounded-lg object-cover"
+                                        unoptimized
                                     />
                                     <button 
                                         type="button"

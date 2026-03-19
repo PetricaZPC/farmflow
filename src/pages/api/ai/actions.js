@@ -13,7 +13,12 @@ function formatResponse(text) {
   return formattedText.trim();
 }
 
-export default async function handler(req, res) {
+/**
+ * POST /api/ai/actions
+ *
+ * Sends a prompt to Google Generative AI and returns a formatted response.
+ */
+export default async function generateAiResponseHandler(req, res) {
   if (req.method != "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }

@@ -1,30 +1,38 @@
 import clientPromise from './mongodb';
 
-export default async function handler(req, res) {
+/**
+ * GET/POST /api/auth/getCrops
+ *
+ * Retrieves stored crop data for the authenticated user.
+ */
+export default async function getCropsHandler(req, res) {
     if (req.method !== 'GET' && req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
     try {
         const sessionId = req.cookies.sessionId;
-        
+
         if (!sessionId) {
             return res.status(401).json({ message: "Not authenticated" });
         }
 
-        const client = await clientPromise;
-        const db = client.db('accounts'); 
-        const users = db.collection('users'); 
+        const mongoClient = await clientPromise;
+        const accountsDb = mongoClient.db('accounts');
+        const usersCollection = accountsDb.collection('users');
 
-        const user = await users.findOne({ sessionId: sessionId });
+        const authenticatedUser = await usersCollection.findOne({ sessionId });
 
-        if (!user) {
+        if (!authenticatedUser) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        res.status(200).json({ crops: user.crops || {}, email: user.email });
+        return res.status(200).json({
+            crops: authenticatedUser.crops || {},
+            email: authenticatedUser.email,
+        });
     } catch (error) {
         console.error('Error fetching crops:', error);
-        res.status(500).json({ error: 'An error occurred while fetching crops' });
+        return res.status(500).json({ error: 'An error occurred while fetching crops' });
     }
 }

@@ -1,7 +1,27 @@
 import clientPromise from '../auth/mongodb';
 import { ObjectId } from 'mongodb';
 
-export default async function handler(req, res) {
+/**
+ * Normalize an identifier string into a MongoDB ObjectId.
+ * Returns null for invalid values.
+ */
+function toObjectId(value) {
+    if (!value || typeof value !== 'string') return null;
+
+    try {
+        return new ObjectId(value);
+    } catch (error) {
+        console.error('Invalid ObjectId:', value, error);
+        return null;
+    }
+}
+
+/**
+ * GET /api/messages/getMessages
+ *
+ * Returns messages for the authenticated user and their friends.
+ */
+export default async function getMessagesHandler(req, res) {
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
@@ -12,69 +32,66 @@ export default async function handler(req, res) {
             return res.status(401).json({ error: 'Not authenticated' });
         }
 
-        const client = await clientPromise;
-        const db = client.db('accounts');
-        
-        const users = db.collection('users');
-        const currentUser = await users.findOne({ sessionId });
-        
-        if (!currentUser) {
+        const mongoClient = await clientPromise;
+        const accountsDb = mongoClient.db('accounts');
+
+        const usersCollection = accountsDb.collection('users');
+        const authenticatedUser = await usersCollection.findOne({ sessionId });
+
+        if (!authenticatedUser) {
             return res.status(401).json({ error: 'Not authenticated' });
         }
 
-        const friendIds = [...(currentUser.friends || [])].map(id => 
-            typeof id === 'object' && id._id ? id._id.toString() : String(id)
+        const friendUserIds = (Array.isArray(authenticatedUser.friends)
+            ? authenticatedUser.friends
+            : []
+        ).map((friend) =>
+            typeof friend === 'object' && friend?._id ? String(friend._id) : String(friend)
         );
-        
-        friendIds.push(currentUser._id.toString());
 
-        const messagesCollection = db.collection('messages');
-        const messages = await messagesCollection
+        const authenticatedUserId = String(authenticatedUser._id);
+        if (authenticatedUserId) friendUserIds.push(authenticatedUserId);
+
+        const messagesCollection = accountsDb.collection('messages');
+        const rawMessages = await messagesCollection
             .find({
                 $or: [
-                    { authorId: { $in: friendIds } },
-                    { authorId: currentUser._id.toString() }
-                ]
+                    { authorId: { $in: friendUserIds } },
+                    { authorId: authenticatedUserId },
+                ],
             })
             .sort({ timestamp: 1 })
             .toArray();
 
-        const authorIds = [...new Set(messages.map(msg => msg.authorId))];
-        const authorObjectIds = authorIds
-            .filter(id => id && typeof id === 'string')
-            .map(id => {
-                try {
-                    return new ObjectId(id);
-                } catch (error) {
-                    console.error(`Invalid author ObjectId: ${id}`, error);
-                    return null;
-                }
-            })
-            .filter(id => id !== null);
+        const uniqueAuthorIds = [...new Set(rawMessages.map((message) => message.authorId))];
+        const authorObjectIds = uniqueAuthorIds
+            .map(toObjectId)
+            .filter((id) => id !== null);
 
-        const authorDetails = await users
+        const authorProfiles = await usersCollection
             .find({ _id: { $in: authorObjectIds } })
             .project({ _id: 1, username: 1, email: 1, profileImageUrl: 1 })
             .toArray();
 
-        const userMap = {};
-        authorDetails.forEach(user => {
-            userMap[user._id.toString()] = {
-                username: user.username || user.email,
-                email: user.email,
-                profileImageUrl: user.profileImageUrl
+        const profileById = authorProfiles.reduce((acc, profile) => {
+            acc[profile._id.toString()] = {
+                username: profile.username || profile.email,
+                email: profile.email,
+                profileImageUrl: profile.profileImageUrl,
             };
-        });
+            return acc;
+        }, {});
 
-        const enrichedMessages = messages.map(msg => ({
-            ...msg,
-            authorDetails: userMap[msg.authorId] || {
-                username: msg.authorEmail,
-                email: msg.authorEmail
-            }
+        const messagesWithAuthorProfiles = rawMessages.map((message) => ({
+            ...message,
+            authorDetails:
+                profileById[message.authorId] || {
+                    username: message.authorEmail,
+                    email: message.authorEmail,
+                },
         }));
 
-        res.status(200).json({ messages: enrichedMessages });
+        res.status(200).json({ messages: messagesWithAuthorProfiles });
     } catch (error) {
         console.error('Error fetching messages:', error);
         res.status(500).json({ error: 'Error fetching messages' });

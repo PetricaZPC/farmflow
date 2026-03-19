@@ -1,6 +1,11 @@
 import clientPromise from './mongodb'; 
 
-export default async function handler(req, res) {
+/**
+ * POST /api/auth/saveCrops
+ *
+ * Persists user crop data into the authenticated user's account record.
+ */
+export default async function saveCropsHandler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
@@ -16,11 +21,9 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'No crops data provided' });
         }
 
-        console.log("Received crops data:", JSON.stringify(crops).substring(0, 200) + "...");
-
-        const client = await clientPromise;
-        const db = client.db('accounts');
-        const users = db.collection('users');
+        const mongoClient = await clientPromise;
+        const accountsDb = mongoClient.db('accounts');
+        const usersCollection = accountsDb.collection('users');
 
         // First check if user exists
         const user = await users.findOne({ sessionId });
