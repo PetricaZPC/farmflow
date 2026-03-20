@@ -9,7 +9,8 @@ export default function Navbar({ userEmail, profileData }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [fetchedProfile, setFetchedProfile] = useState(null);
-  const [localUserEmail, setLocalUserEmail] = useState(userEmail);  const dropdownRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const localUserEmail = userEmail || null;
   const router = useRouter();
 
   const effectiveProfileData = profileData || fetchedProfile;
@@ -19,13 +20,7 @@ export default function Navbar({ userEmail, profileData }) {
     '';
   const displayProfileImage = effectiveProfileData?.profileImageUrl || null;
 
-  useEffect(() => {
-    if (userEmail) {
-      setLocalUserEmail(userEmail);
-    } else {
-      setLocalUserEmail(null);
-    }
-  }, [userEmail]);
+  // Eliminat useEffect pentru localUserEmail, folosim variabilă derivată
 
   useEffect(() => {
     const fetchProfileData = async () => {
