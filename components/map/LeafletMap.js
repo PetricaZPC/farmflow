@@ -182,7 +182,11 @@ function LeafletMap({ userEmail, userCrops }) {
         return acc;
       }, {});
 
-      setPopups(normalizedPopups);
+      // Doar dacă popups s-au schimbat
+      const isEqual = JSON.stringify(normalizedPopups) === JSON.stringify(popups);
+      if (!isEqual) {
+        setPopups(normalizedPopups);
+      }
 
       const newFeatureGroup = new L.FeatureGroup();
 
@@ -216,7 +220,7 @@ function LeafletMap({ userEmail, userCrops }) {
       setAreas([...newFeatureGroup.getLayers()]);
     }
     setLoading(false);
-  }, [userCrops]);
+  }, [userCrops, popups]);
 
   // Only save when actual crop data changes, not UI state (show/position)
   const prevCropDataRef = useRef({});
