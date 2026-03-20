@@ -2,7 +2,7 @@ import formidable from 'formidable';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import clientPromise from '../auth/mongodb';
+import clientPromise, { getDatabase } from '../auth/mongodb';
 
 export const config = {
     api: {
@@ -76,7 +76,7 @@ export default async function handler(req, res) {
         console.log('Image URL:', imageUrl);
         
         const client = await clientPromise;
-        const db = client.db('accounts');
+        const db = await getDatabase();
         const users = db.collection('users');
         
         const user = await users.findOne({ sessionId });

@@ -122,46 +122,46 @@ function LeafletMap({ userEmail, userCrops }) {
     [setActiveCrop, setShowCommunityPanel, setCommunityTips]
   );
 
-  const handleAreaClick = useCallback(
-    (layer, latlng) => {
-      let id;
-
-      if (layer.feature && layer.feature.properties && layer.feature.properties.id) {
-        id = layer.feature.properties.id;
-      } else if (
-        layer.options &&
-        layer.options.data &&
-        layer.options.data.properties &&
-        layer.options.data.properties.id
-      ) {
-        id = layer.options.data.properties.id;
-      } else {
-        id = layer.properties ? layer.properties.id : null;
+  // Stable handleAreaClick, nu depinde de popups
+  const handleAreaClick = (layer, latlng) => {
+    let id;
+    if (layer.feature && layer.feature.properties && layer.feature.properties.id) {
+      id = layer.feature.properties.id;
+    } else if (
+      layer.options &&
+      layer.options.data &&
+      layer.options.data.properties &&
+      layer.options.data.properties.id
+    ) {
+      id = layer.options.data.properties.id;
+    } else {
+      id = layer.properties ? layer.properties.id : null;
+    }
+    if (!id) {
+      console.error("Could not determine ID from layer:", layer);
+      return;
+    }
+    console.log(`Clicked on area with ID: ${id}`);
+    setPopups((prev) => {
+      const position = latlng || (prev[id]?.area ? (L.geoJSON(prev[id].area).getBounds().getCenter()) : null);
+      if (!position) {
+        console.error('No valid position for popup:', id, prev[id]);
       }
-
-      if (!id) {
-        console.error("Could not determine ID from layer:", layer);
-        return;
-      }
-
-      console.log(`Clicked on area with ID: ${id}`);
-
-      setPopups((prev) => ({
+      return {
         ...prev,
         [id]: {
           ...prev[id],
           show: true,
-          position: latlng,
+          position,
         },
-      }));
-
-      const cropName = popups[id]?.cropName;
-      if (cropName) {
-        handleFetchCommunityTips(cropName);
-      }
-    },
-    [popups, handleFetchCommunityTips]
-  );
+      };
+    });
+    // Nu folosi popups[id] aici, ci userCrops dacă vrei cropName
+    const cropName = userCrops && userCrops[id] ? userCrops[id].cropName : undefined;
+    if (cropName) {
+      handleFetchCommunityTips(cropName);
+    }
+  };
 
   useEffect(() => {
     return () => {
@@ -172,12 +172,21 @@ function LeafletMap({ userEmail, userCrops }) {
   useEffect(() => {
     if (userCrops && Object.keys(userCrops).length > 0) {
       console.log("Loading userCrops:", userCrops);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPopups(userCrops);
+
+      const normalizedPopups = Object.entries(userCrops).reduce((acc, [id, popup]) => {
+        acc[id] = {
+          ...popup,
+          show: Boolean(popup.show),
+          position: popup.position || (popup.area ? L.geoJSON(popup.area).getBounds().getCenter() : null),
+        };
+        return acc;
+      }, {});
+
+      setPopups(normalizedPopups);
 
       const newFeatureGroup = new L.FeatureGroup();
 
-      Object.entries(userCrops).forEach(([id, popup]) => {
+      Object.entries(normalizedPopups).forEach(([id, popup]) => {
         if (popup.area) {
           try {
             const geoJsonLayer = L.geoJSON(popup.area, {
@@ -191,10 +200,8 @@ function LeafletMap({ userEmail, userCrops }) {
                 feature.properties = feature.properties || {};
                 feature.properties.id = id;
                 layer.feature = feature;
-
-                layer.on("click", (e) => {
-                  handleAreaClick(layer, e.latlng);
-                });
+                // Folosește funcția stabilă handleAreaClick
+                layer.on("click", (e) => handleAreaClick(layer, e.latlng));
               },
             });
 
@@ -209,16 +216,37 @@ function LeafletMap({ userEmail, userCrops }) {
       setAreas([...newFeatureGroup.getLayers()]);
     }
     setLoading(false);
-  }, [userCrops, handleAreaClick]);
+  }, [userCrops]);
 
+  // Only save when actual crop data changes, not UI state (show/position)
+  const prevCropDataRef = useRef({});
   useEffect(() => {
     if (!popups || Object.keys(popups).length === 0) {
       console.log("No crops to auto-save yet");
       return;
     }
 
-    console.log("Starting auto-save interval");
+    // Extract only crop data fields for comparison
+    const getCropDataOnly = (popupsObj) => {
+      const cropData = {};
+      Object.entries(popupsObj).forEach(([id, popup]) => {
+        // Only include fields that are actual crop data, not UI state
+        const { cropName, plantingDate, area, notes, aiRecommendations } = popup;
+        cropData[id] = { cropName, plantingDate, area, notes, aiRecommendations };
+      });
+      return cropData;
+    };
 
+    const currentCropData = getCropDataOnly(popups);
+    const prevCropData = prevCropDataRef.current;
+    const isEqual = JSON.stringify(currentCropData) === JSON.stringify(prevCropData);
+    if (isEqual) {
+      // No actual crop data changes
+      return;
+    }
+    prevCropDataRef.current = currentCropData;
+
+    let isUnmounted = false;
     const saveData = async () => {
       try {
         await saveCropsToServer(popups);
@@ -227,16 +255,17 @@ function LeafletMap({ userEmail, userCrops }) {
       }
     };
 
-    // Save immediately when crops change
+    // Save immediately when crop data changes
     saveData();
 
-    // Also set up periodic saving
-    const autoSaveInterval = setInterval(saveData, 60000);
+    // Set up periodic saving
+    const autoSaveInterval = setInterval(() => {
+      if (!isUnmounted) saveData();
+    }, 60000);
 
     return () => {
+      isUnmounted = true;
       clearInterval(autoSaveInterval);
-      // Attempt one final save on unmount
-      saveData().catch(console.error);
     };
   }, [popups, saveCropsToServer]);
 
@@ -406,27 +435,7 @@ function LeafletMap({ userEmail, userCrops }) {
     }
   };
 
-  useEffect(() => {
-    if (!popups || Object.keys(popups).length === 0) {
-      return;
-    }
-
-    const saveData = async () => {
-      try {
-        await saveCropsToServer(popups);
-      } catch (error) {
-        console.error("Auto-save error:", error);
-      }
-    };
-
-    // Save immediately when crops change
-    saveData();
-
-    // Also set up periodic saving
-    const autoSaveInterval = setInterval(saveData, 60000);
-
-    return () => clearInterval(autoSaveInterval);
-  }, [popups, saveCropsToServer]);
+  // Removed duplicate auto-save useEffect to prevent memory leaks and render loops
 
   return (
     <div className={styles.cont}>
@@ -462,14 +471,16 @@ function LeafletMap({ userEmail, userCrops }) {
                     }}
                     eventHandlers={{
                       click: (e) => {
-                        setPopups((prev) => ({
-                          ...prev,
-                          [id]: { ...prev[id], show: true, position: e.latlng },
-                        }));
-
-                        if (popup.cropName) {
-                          handleFetchCommunityTips(popup.cropName);
-                        }
+                        setPopups((prev) => {
+                          const updated = {
+                            ...prev,
+                            [id]: { ...prev[id], show: true, position: e.latlng },
+                          };
+                          if (updated[id]?.cropName) {
+                            handleFetchCommunityTips(updated[id].cropName);
+                          }
+                          return updated;
+                        });
                       },
                     }}
                   />

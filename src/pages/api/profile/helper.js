@@ -1,4 +1,4 @@
-import clientPromise from "../auth/mongodb";
+import clientPromise, { getDatabase } from '../auth/mongodb';
 import { ObjectId } from "mongodb";
 
 export default async function handler(req, res) {
@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     }
 
     const client = await clientPromise;
-    const db = client.db("accounts");
+    const db = await getDatabase();
     const users = db.collection("users");
 
     const currentUser = await users.findOne({ sessionId });

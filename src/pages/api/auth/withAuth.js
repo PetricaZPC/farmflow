@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { getCookie } from 'cookies-next';
 
 const withAuth = (WrappedComponent) => {
     const WithAuth = (props) => {
@@ -12,12 +11,6 @@ const withAuth = (WrappedComponent) => {
 
         useEffect(() => {
             const checkAuthentication = async () => {
-                const sessionId = getCookie('sessionId');
-                if (!sessionId) {
-                    router.replace('/signin');
-                    return;
-                }
-
                 try {
                     const response = await fetch('/api/auth/checkAuth', {
                         method: 'GET',

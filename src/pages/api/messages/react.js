@@ -1,4 +1,4 @@
-import clientPromise from '../auth/mongodb';
+import clientPromise, { getDatabase } from '../auth/mongodb';
 import { ObjectId } from 'mongodb';
 
 /**
@@ -33,7 +33,7 @@ export default async function postMessageReaction(req, res) {
     
     try {
       const mongoClient = await clientPromise;
-      const accountsDb = mongoClient.db('accounts');
+      const accountsDb = await getDatabase();
       const messagesCollection = accountsDb.collection('messages');
 
       const messageObjectId = toObjectId(messageId);

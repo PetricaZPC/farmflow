@@ -1,4 +1,4 @@
-import clientPromise from "./mongodb";
+import clientPromise, { getDatabase } from './mongodb';
 import bcrypt from "bcryptjs";
 import { setCookie } from "cookies-next";
 import { v4 as uuidv4 } from "uuid";
@@ -23,7 +23,7 @@ export default async function loginHandler(req, res) {
 
   try {
     const mongoClient = await clientPromise;
-    const accountsDb = mongoClient.db("accounts");
+    const accountsDb = await getDatabase();
     const usersCollection = accountsDb.collection("users");
 
     const user = await usersCollection.findOne({
@@ -44,14 +44,16 @@ export default async function loginHandler(req, res) {
 
     const sessionId = uuidv4();
 
-    await users.updateOne({ _id: user._id }, { $set: { sessionId } });
+    await usersCollection.updateOne({ _id: user._id }, { $set: { sessionId } });
 
     setCookie("sessionId", sessionId, {
-      req,
-      res,
-      httpOnly: true,
-      maxAge: 3600,
-      sameSite: "Strict",
+        req,
+        res,
+        httpOnly: true,
+        maxAge: 3600,
+        sameSite: "Lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production"
     });
 
     res.status(200).json({

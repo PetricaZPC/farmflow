@@ -1,4 +1,4 @@
-import clientPromise from './mongodb'; 
+import clientPromise, { getDatabase } from './mongodb'; 
 
 /**
  * POST /api/auth/saveCrops
@@ -22,18 +22,18 @@ export default async function saveCropsHandler(req, res) {
         }
 
         const mongoClient = await clientPromise;
-        const accountsDb = mongoClient.db('accounts');
+        const accountsDb = await getDatabase();
         const usersCollection = accountsDb.collection('users');
 
         // First check if user exists
-        const user = await users.findOne({ sessionId });
+        const user = await usersCollection.findOne({ sessionId });
         if (!user) {
             console.error("User not found with sessionId:", sessionId);
             return res.status(401).json({ error: 'Session expired or user not found' });
         }
 
         // Then update the user document
-        const result = await users.updateOne(
+        const result = await usersCollection.updateOne(
             { _id: user._id }, 
             { $set: { crops: crops } }
         );

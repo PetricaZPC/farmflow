@@ -1,4 +1,4 @@
-import clientPromise from '../auth/mongodb';
+import clientPromise, { getDatabase } from '../auth/mongodb';
 
 /**
  * GET /api/community/tips
@@ -18,7 +18,7 @@ export default async function getCropTipsHandler(req, res) {
     }
     
     const client = await clientPromise;
-    const db = client.db('accounts');
+    const db = await getDatabase();
     const tipsCollection = db.collection('cropTips');
     
     

@@ -1,5 +1,5 @@
 import { deleteCookie } from 'cookies-next';
-import clientPromise from './mongodb';
+import clientPromise, { getDatabase } from './mongodb';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     if (sessionId) {
       try {
         const client = await clientPromise;
-        const db = client.db('accounts');
+        const db = await getDatabase();
         const users = db.collection('users');
         
         await users.updateOne(

@@ -1,4 +1,4 @@
-import clientPromise from './mongodb';
+import clientPromise, { getDatabase } from './mongodb';
 
 /**
  * GET /api/auth/checkAuth
@@ -13,7 +13,7 @@ export default async function checkAuthHandler(req, res) {
     }
 
     const mongoClient = await clientPromise;
-    const accountsDb = mongoClient.db('accounts');
+    const accountsDb = await getDatabase();
     const usersCollection = accountsDb.collection('users');
 
     const authenticatedUser = await usersCollection.findOne({ sessionId });

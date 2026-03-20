@@ -3,14 +3,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import logo from '../public/field.png';
-import { deleteCookie, getCookie } from 'cookies-next';
+import { deleteCookie } from 'cookies-next';
 
 export default function Navbar({ userEmail, profileData }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [fetchedProfile, setFetchedProfile] = useState(null);
-  const [localUserEmail, setLocalUserEmail] = useState(userEmail);
-  const dropdownRef = useRef(null);
+  const [localUserEmail, setLocalUserEmail] = useState(userEmail);  const dropdownRef = useRef(null);
   const router = useRouter();
 
   const effectiveProfileData = profileData || fetchedProfile;
@@ -21,31 +20,11 @@ export default function Navbar({ userEmail, profileData }) {
   const displayProfileImage = effectiveProfileData?.profileImageUrl || null;
 
   useEffect(() => {
-    const checkSession = async () => {
-      if (!userEmail) {
-        const sessionId = getCookie('sessionId');
-        if (sessionId) {
-          try {
-            const response = await fetch('/api/auth/checkAuth', {
-              credentials: 'include',
-            });
-
-            if (response.ok) {
-              const data = await response.json();
-              if (data.email) {
-                setLocalUserEmail(data.email);
-              }
-            }
-          } catch (error) {
-            console.error('Error checking session:', error);
-          }
-        }
-      } else {
-        setLocalUserEmail(userEmail);
-      }
-    };
-
-    checkSession();
+    if (userEmail) {
+      setLocalUserEmail(userEmail);
+    } else {
+      setLocalUserEmail(null);
+    }
   }, [userEmail]);
 
   useEffect(() => {

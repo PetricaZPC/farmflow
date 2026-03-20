@@ -1,4 +1,4 @@
-import clientPromise from '../auth/mongodb';
+import clientPromise, { getDatabase } from '../auth/mongodb';
 import formidable from 'formidable';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -36,7 +36,7 @@ export default async function postMessageHandler(req, res) {
         });
 
         const mongoClient = await clientPromise;
-        const accountsDb = mongoClient.db('accounts');
+        const accountsDb = await getDatabase();
 
         const usersCollection = accountsDb.collection('users');
         const authenticatedUser = await usersCollection.findOne({ sessionId });

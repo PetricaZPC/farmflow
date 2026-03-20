@@ -1,4 +1,4 @@
-import clientPromise from '../auth/mongodb';
+import clientPromise, { getDatabase } from '../auth/mongodb';
 import { ObjectId } from 'mongodb';
 
 /**
@@ -35,7 +35,7 @@ export default async function postReplyHandler(req, res) {
         }
 
         const mongoClient = await clientPromise;
-        const accountsDb = mongoClient.db('accounts');
+        const accountsDb = await getDatabase();
         const messagesCollection = accountsDb.collection('messages');
 
         const replyDocument = {

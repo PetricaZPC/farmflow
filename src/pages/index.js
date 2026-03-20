@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { getCookie } from 'cookies-next';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import ADR from "../../public/ADR.png";
@@ -15,11 +14,6 @@ export default function Home() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const sessionId = getCookie('sessionId');
-        if (!sessionId) {
-          return;
-        }
-        
         const sessionResponse = await fetch('/api/auth/checkAuth', {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },

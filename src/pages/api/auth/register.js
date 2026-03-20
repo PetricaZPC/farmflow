@@ -1,4 +1,4 @@
-import clientPromise from './mongodb';
+import clientPromise, { getDatabase } from './mongodb';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -46,7 +46,7 @@ export default async function registerHandler(req, res) {
 
     try {
         const mongoClient = await clientPromise;
-        const accountsDb = mongoClient.db('accounts');
+        const accountsDb = await getDatabase();
         const usersCollection = accountsDb.collection('users');
 
         const existingUser = await usersCollection.findOne({ email: email.toLowerCase() });
@@ -69,7 +69,7 @@ export default async function registerHandler(req, res) {
         const now = new Date();
         const sessionId = uuidv4();
         
-        await users.insertOne({ 
+        await usersCollection.insertOne({ 
             email: email.toLowerCase(), 
             password: hashedPassword,
             username: finalUsername,

@@ -1,4 +1,4 @@
-import clientPromise from '../auth/mongodb';
+import clientPromise, { getDatabase } from '../auth/mongodb';
 
 /**
  * POST /api/community/shareTip
@@ -18,7 +18,7 @@ export default async function shareCropTipHandler(req, res) {
     }
     
     const mongoClient = await clientPromise;
-    const accountsDb = mongoClient.db('accounts');
+    const accountsDb = await getDatabase();
     const tipsCollection = accountsDb.collection('cropTips');
     const usersCollection = accountsDb.collection('users');
 
