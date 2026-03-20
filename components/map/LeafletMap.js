@@ -220,7 +220,7 @@ function LeafletMap({ userEmail, userCrops }) {
       setAreas([...newFeatureGroup.getLayers()]);
     }
     setLoading(false);
-  }, [userCrops, popups]);
+  }, [userCrops]);
 
   // Only save when actual crop data changes, not UI state (show/position)
   const prevCropDataRef = useRef({});
