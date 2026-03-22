@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw/dist/leaflet.draw.css";
 import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
