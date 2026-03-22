@@ -23,7 +23,7 @@ const Popup = dynamic(() => import('react-leaflet').then((mod) => mod.Popup), {
     ssr: false,
 });
 
-const LeafletCSS = dynamic(() => import('leaflet/dist/leaflet.css'), { ssr: false });
+
 
 function Community({ userEmail }) {
     const router = useRouter();
