@@ -35,6 +35,23 @@ GEMINI_API_KEY=your_google_generative_ai_key
 
 > Make sure MongoDB is reachable and the `accounts` database is accessible.
 
+Optional: `GEMINI_MODEL` overrides the Gemini model (default `gemini-2.5-flash`).
+
+## Demo mode
+
+The sign-in page has a **Try the demo (no sign-up)** button. It calls `POST /api/auth/demo`, which creates a temporary
+guest account for that visitor (three sample fields, three neighbour farmers as friends, community tips and messages)
+and signs them in. Guest accounts are deleted after 24 hours, and at most 150 can be active at once.
+Regular sign-in and sign-up are unchanged. The demo uses the same MongoDB database and environment variables as the app.
+
+Known limitations of the demo deployment:
+
+- AI recommendations use a **free Google Gemini API key**, which has most likely expired or hit its quota. The app shows a
+  clear message instead of failing; the sample fields include static example recommendations.
+- Profile and message images cannot be uploaded on Vercel (read-only filesystem), so the app answers with a clear error.
+- Socket.IO needs a long-running server, so the real-time push does not work on Vercel's serverless functions. Messages
+  are still saved and the community page falls back to polling every 3 seconds.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

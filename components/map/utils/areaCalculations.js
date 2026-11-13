@@ -14,7 +14,9 @@ export const calculateFieldArea = (geoJson) => {
         }
         area = Math.abs(area) / 2;
         
-        const approxHectares = area * 111319.9 * 111319.9 / 10000;
+        // Longitude degrees shrink with latitude: scale by cos(mean latitude) so the area is not overestimated.
+        const meanLat = coords.reduce((sum, c) => sum + c[1], 0) / coords.length;
+        const approxHectares = area * 111319.9 * 111319.9 * Math.cos((meanLat * Math.PI) / 180) / 10000;
         return Math.round(approxHectares * 100) / 100;
     } catch (error) {
         console.error("Error calculating field area:", error);

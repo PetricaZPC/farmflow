@@ -28,9 +28,17 @@ export default async function generateAiResponseHandler(req, res) {
     return res.status(400).json({ error: "Message is required" });
   }
 
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(503).json({
+      error: "AI recommendations are unavailable: no Gemini API key is configured.",
+    });
+  }
+
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({
+      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+    });
     const result = await model.generateContent(message);
     const response = await result.response;
     const text = formatResponse(response.text());
@@ -38,6 +46,10 @@ export default async function generateAiResponseHandler(req, res) {
     res.status(200).json({ reply: text });
   } catch (error) {
     console.error("Error generating content:", error);
-    res.status(500).json({ error: error.message });
+    // Free API keys expire or hit their quota; tell the user instead of a bare 500.
+    res.status(503).json({
+      error:
+        "AI recommendations are unavailable right now. The project uses a free Google Gemini key, which has probably expired or reached its quota.",
+    });
   }
 }

@@ -10,6 +10,8 @@ function SignIn({
   handleSignIn,
   error,
   message,
+  handleDemo,
+  demoLoading,
 }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -67,9 +69,23 @@ function SignIn({
             </button>
           </div>
 
+          <div className="relative text-center text-xs text-gray-500">
+            <span className="bg-white px-2">or</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleDemo}
+            disabled={demoLoading}
+            className="w-full rounded-md border border-green-600 px-4 py-2 font-medium text-green-700 hover:bg-green-50 disabled:opacity-60"
+          >
+            {demoLoading ? "Preparing demo…" : "Try the demo (no sign-up)"}
+          </button>
+
           <p className="text-center text-sm text-gray-600">
             Don&apos;t have an account?{" "}
             <button
+              type="button"
               onClick={toggleForm}
               className="text-green-600 hover:text-green-500 font-medium"
             >
@@ -228,7 +244,30 @@ export default function AuthPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [demoLoading, setDemoLoading] = useState(false);
   const router = useRouter();
+
+  const handleDemo = async () => {
+    setDemoLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const res = await fetch("/api/auth/demo", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        router.push("/map");
+      } else {
+        setError(data.error || "Could not start the demo");
+      }
+    } catch (err) {
+      setError("Could not start the demo. Please try again.");
+    } finally {
+      setDemoLoading(false);
+    }
+  };
 
   const toggleForm = () => {
     setIsSignIn(!isSignIn);
@@ -318,6 +357,8 @@ export default function AuthPage() {
           handleSignIn={handleSignIn}
           error={error}
           message={message}
+          handleDemo={handleDemo}
+          demoLoading={demoLoading}
         />
       ) : (
         <SignUp

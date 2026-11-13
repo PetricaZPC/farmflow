@@ -135,7 +135,7 @@ function LeafletMap({ userEmail, userCrops }) {
 
     setPopups(normalizedPopups);
     setLoading(false);
-  }, [userCrops]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [userCrops]);
 
   // FIX: Construirea layerelor într-un effect SEPARAT care depinde de popups
   useEffect(() => {

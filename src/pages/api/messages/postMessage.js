@@ -57,8 +57,14 @@ export default async function postMessageHandler(req, res) {
             const fileName = `${uuidv4()}${ext}`;
             
             const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-            await fs.mkdir(uploadDir, { recursive: true });
-            
+            try {
+                await fs.mkdir(uploadDir, { recursive: true });
+                await fs.access(uploadDir, fs.constants.W_OK);
+            } catch (err) {
+                console.error('Uploads directory is not writable:', err);
+                return res.status(503).json({ error: 'Image uploads are not available on this deployment (read-only storage).' });
+            }
+
             const data = await fs.readFile(file.filepath);
             await fs.writeFile(path.join(uploadDir, fileName), data);
             

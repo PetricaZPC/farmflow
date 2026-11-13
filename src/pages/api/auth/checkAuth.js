@@ -25,6 +25,7 @@ export default async function checkAuthHandler(req, res) {
       message: "Authenticated",
       email: authenticatedUser.email,
       crops: authenticatedUser.crops,
+      isDemo: Boolean(authenticatedUser.isDemo),
     });
   } catch (error) {
     return res.status(401).json({ message: "Not authenticated" });

@@ -75,9 +75,14 @@ export const getAIRecommendations = async (crop, plantingDate, area) => {
         });
         
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`API error (${response.status}):`, errorText);
-            return `<p>Server error: ${response.status}. Please try again later.</p>`;
+            let reason = '';
+            try {
+                reason = (await response.json()).error || '';
+            } catch (e) {
+                reason = '';
+            }
+            console.error(`API error (${response.status}):`, reason);
+            return `<p>${reason || `Server error: ${response.status}. Please try again later.`}</p>`;
         }
         
         const data = await response.json();

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import DemoBanner from '../../../../components/DemoBanner';
 
 const withAuth = (WrappedComponent) => {
     const WithAuth = (props) => {
@@ -8,6 +9,7 @@ const withAuth = (WrappedComponent) => {
         const [loading, setLoading] = useState(true);
         const [userEmail, setUserEmail] = useState('');
         const [userCrops, setUserCrops] = useState([]);
+        const [isDemo, setIsDemo] = useState(false);
 
         useEffect(() => {
             const checkAuthentication = async () => {
@@ -24,6 +26,7 @@ const withAuth = (WrappedComponent) => {
                         const data = await response.json();
                         setUserEmail(data.email);
                         setUserCrops(data.crops || {});
+                        setIsDemo(Boolean(data.isDemo));
                         setIsAuthenticated(true);
                     } else {
                         router.replace('/signin');
@@ -47,7 +50,12 @@ const withAuth = (WrappedComponent) => {
             return null;
         }
 
-        return <WrappedComponent {...props} userEmail={userEmail} userCrops={userCrops} />;
+        return (
+            <>
+                <WrappedComponent {...props} userEmail={userEmail} userCrops={userCrops} />
+                {isDemo && <DemoBanner />}
+            </>
+        );
     };
 
     WithAuth.displayName = `WithAuth(${WrappedComponent.displayName || WrappedComponent.name || 'Component'})`;
