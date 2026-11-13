@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
 const NOTICE =
-  'Demo account: your data is temporary and deleted after 24 hours. AI recommendations use a free Google Gemini key ' +
-  'that has probably expired, and image uploads are disabled.';
+  'Demo: sample data stored only in your browser (no account, no database). AI recommendations show static examples ' +
+  'because the free Google Gemini key has probably expired, and image uploads are disabled.';
 
 /** Small dismissible notice shown to guests of the demo account. */
 export default function DemoBanner() {

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useRouter } from "next/router";
+import { startDemo } from "@/lib/demoClient";
 
 function SignIn({
   toggleForm,
@@ -79,7 +80,7 @@ function SignIn({
             disabled={demoLoading}
             className="w-full rounded-md border border-green-600 px-4 py-2 font-medium text-green-700 hover:bg-green-50 disabled:opacity-60"
           >
-            {demoLoading ? "Preparing demo…" : "Try the demo (no sign-up)"}
+            {demoLoading ? "Preparing demo…" : "Try application"}
           </button>
 
           <p className="text-center text-sm text-gray-600">
@@ -247,24 +248,16 @@ export default function AuthPage() {
   const [demoLoading, setDemoLoading] = useState(false);
   const router = useRouter();
 
-  const handleDemo = async () => {
+  // Demo runs entirely in the browser (no account, no database): see src/lib/demoClient.js
+  const handleDemo = () => {
     setDemoLoading(true);
     setError("");
     setMessage("");
     try {
-      const res = await fetch("/api/auth/demo", {
-        method: "POST",
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (res.ok) {
-        router.push("/map");
-      } else {
-        setError(data.error || "Could not start the demo");
-      }
+      startDemo();
+      router.push("/map");
     } catch (err) {
-      setError("Could not start the demo. Please try again.");
-    } finally {
+      setError("Could not start the demo. Please enable browser storage and try again.");
       setDemoLoading(false);
     }
   };

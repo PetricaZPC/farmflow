@@ -39,18 +39,20 @@ Optional: `GEMINI_MODEL` overrides the Gemini model (default `gemini-2.5-flash`)
 
 ## Demo mode
 
-The sign-in page has a **Try the demo (no sign-up)** button. It calls `POST /api/auth/demo`, which creates a temporary
-guest account for that visitor (three sample fields, three neighbour farmers as friends, community tips and messages)
-and signs them in. Guest accounts are deleted after 24 hours, and at most 150 can be active at once.
-Regular sign-in and sign-up are unchanged. The demo uses the same MongoDB database and environment variables as the app.
+The sign-in page has a **Try application** button that opens the app immediately: no account, no sign-up and **no database**.
+Sample data (three fields, three neighbour farmers as friends, a pending friend request, community tips and messages) is
+stored in the visitor's own browser (`localStorage`), and a small `fetch` wrapper (`src/lib/demoClient.js`) answers the
+`/api/*` calls from it while demo mode is on. Nothing is sent to or saved on the server. Logging out, or clearing the site
+data, removes the demo. Regular sign-in and sign-up are unchanged and still use MongoDB.
 
-Known limitations of the demo deployment:
+Known limitations of the demo:
 
-- AI recommendations use a **free Google Gemini API key**, which has most likely expired or hit its quota. The app shows a
-  clear message instead of failing; the sample fields include static example recommendations.
-- Profile and message images cannot be uploaded on Vercel (read-only filesystem), so the app answers with a clear error.
-- Socket.IO needs a long-running server, so the real-time push does not work on Vercel's serverless functions. Messages
-  are still saved and the community page falls back to polling every 3 seconds.
+- AI recommendations show **static example text**: the real feature uses a **free Google Gemini API key**, which has most
+  likely expired or hit its quota.
+- Profile and message images cannot be uploaded in the demo (and not on Vercel's read-only filesystem either).
+- Friend requests you send in the demo go nowhere, and other visitors never see your messages.
+- Socket.IO needs a long-running server, so real-time push does not work on Vercel's serverless functions; the real
+  community page falls back to polling every 3 seconds.
 
 ## Learn More
 
